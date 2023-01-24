@@ -18,7 +18,7 @@ pub const Board = struct {
 
     pub fn emptyBoard() @This() {
         return .{
-            .board = [_]types.Piece{types.Piece.NoPiece} ** types.N_SQUARES,
+            .board = [_]types.Piece{types.Piece.no_piece} ** types.N_SQUARES,
             .byTypeBB = [_]Bitboard{@as(Bitboard, 0)} ** types.N_PIECE_TYPES,
             .byColorBB = [_]Bitboard{@as(Bitboard, 0)} ** types.N_COLORS,
             .castlingRights = @bitCast(types.CastlingRights, @as(u4, 0xF)),
@@ -26,7 +26,7 @@ pub const Board = struct {
             .ply = 0,
             .historyPly = 0,
             .enPassant = null,
-            .side = types.Color.White,
+            .side = types.Color.white,
         };
     }
 
@@ -39,12 +39,12 @@ pub const Board = struct {
 
         for (std.enums.values(types.Square)) |square| {
             const piece = self.board[@enumToInt(square)];
-            if (piece != types.Piece.NoPiece) {
+            if (piece != types.Piece.no_piece) {
                 key ^= HashKeys.pieceSquare[@enumToInt(piece)][@enumToInt(square)];
             }
         }
 
-        if (self.side == types.Color.White) {
+        if (self.side == types.Color.white) {
             key ^= HashKeys.side;
         }
 
@@ -76,76 +76,76 @@ pub const Board = struct {
                     file = 0;
                 },
                 'P' => {
-                    self.board[@enumToInt(square)] = types.Piece.WhitePawn;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Pawn)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.White)], square);
+                    self.board[@enumToInt(square)] = types.Piece.white_pawn;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.pawn)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.white)], square);
                 },
                 'N' => {
-                    self.board[@enumToInt(square)] = types.Piece.WhiteKnight;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Knight)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.White)], square);
+                    self.board[@enumToInt(square)] = types.Piece.white_knight;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.knight)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.white)], square);
                 },
                 'B' => {
-                    self.board[@enumToInt(square)] = types.Piece.WhiteBishop;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Bishop)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.White)], square);
+                    self.board[@enumToInt(square)] = types.Piece.white_bishop;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.bishop)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.white)], square);
                 },
                 'R' => {
-                    self.board[@enumToInt(square)] = types.Piece.WhiteRook;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Rook)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.White)], square);
+                    self.board[@enumToInt(square)] = types.Piece.white_rook;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.rook)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.white)], square);
                 },
                 'Q' => {
-                    self.board[@enumToInt(square)] = types.Piece.WhiteQueen;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Queen)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.White)], square);
+                    self.board[@enumToInt(square)] = types.Piece.white_queen;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.queen)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.white)], square);
                 },
                 'K' => {
-                    self.board[@enumToInt(square)] = types.Piece.WhiteKing;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.King)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.White)], square);
+                    self.board[@enumToInt(square)] = types.Piece.white_king;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.king)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.white)], square);
                 },
                 'p' => {
-                    self.board[@enumToInt(square)] = types.Piece.BlackPawn;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Pawn)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.Black)], square);
+                    self.board[@enumToInt(square)] = types.Piece.black_pawn;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.pawn)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.black)], square);
                 },
                 'n' => {
-                    self.board[@enumToInt(square)] = types.Piece.BlackKnight;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Knight)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.Black)], square);
+                    self.board[@enumToInt(square)] = types.Piece.black_knight;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.knight)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.black)], square);
                 },
                 'b' => {
-                    self.board[@enumToInt(square)] = types.Piece.BlackBishop;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Bishop)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.Black)], square);
+                    self.board[@enumToInt(square)] = types.Piece.black_bishop;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.bishop)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.black)], square);
                 },
                 'r' => {
-                    self.board[@enumToInt(square)] = types.Piece.BlackRook;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Rook)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.Black)], square);
+                    self.board[@enumToInt(square)] = types.Piece.black_rook;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.rook)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.black)], square);
                 },
                 'q' => {
-                    self.board[@enumToInt(square)] = types.Piece.BlackQueen;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.Queen)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.Black)], square);
+                    self.board[@enumToInt(square)] = types.Piece.black_queen;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.queen)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.black)], square);
                 },
                 'k' => {
-                    self.board[@enumToInt(square)] = types.Piece.BlackKing;
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.AllPieces)], square);
-                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.King)], square);
-                    bb.set(&self.byColorBB[@enumToInt(types.Color.Black)], square);
+                    self.board[@enumToInt(square)] = types.Piece.black_king;
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.all_pieces)], square);
+                    bb.set(&self.byTypeBB[@enumToInt(types.PieceType.king)], square);
+                    bb.set(&self.byColorBB[@enumToInt(types.Color.black)], square);
                 },
                 '0'...'9' => {
                     file += c - '0' - 1;
@@ -159,18 +159,18 @@ pub const Board = struct {
 
         const side = parts.next().?[0];
         if (side == 'w') {
-            self.side = types.Color.White;
+            self.side = types.Color.white;
         } else {
-            self.side = types.Color.Black;
+            self.side = types.Color.black;
         }
 
         const castling = parts.next().?;
         for (castling) |ch| {
             switch (ch) {
-                'K' => self.castlingRights.WhiteKingSideCastle = true,
-                'Q' => self.castlingRights.WhiteQueenSideCastle = true,
-                'k' => self.castlingRights.BlackKingSideCastle = true,
-                'q' => self.castlingRights.BlackKingSideCastle = true,
+                'K' => self.castlingRights.white_king_side_castle = true,
+                'Q' => self.castlingRights.white_queen_side_castle = true,
+                'k' => self.castlingRights.black_king_side_castle = true,
+                'q' => self.castlingRights.black_queen_side_castle = true,
                 '-' => break,
                 else => unreachable,
             }
@@ -199,19 +199,19 @@ pub const Board = struct {
 
                 const square = @intCast(types.SquareType, rank * types.N_FILE + file);
                 const piece: u8 = switch (self.board[square]) {
-                    types.Piece.WhitePawn => 'P',
-                    types.Piece.WhiteKnight => 'N',
-                    types.Piece.WhiteBishop => 'B',
-                    types.Piece.WhiteRook => 'R',
-                    types.Piece.WhiteQueen => 'Q',
-                    types.Piece.WhiteKing => 'K',
-                    types.Piece.BlackPawn => 'p',
-                    types.Piece.BlackKnight => 'n',
-                    types.Piece.BlackBishop => 'b',
-                    types.Piece.BlackRook => 'r',
-                    types.Piece.BlackQueen => 'q',
-                    types.Piece.BlackKing => 'k',
-                    types.Piece.NoPiece => '.',
+                    types.Piece.white_pawn => 'P',
+                    types.Piece.white_knight => 'N',
+                    types.Piece.white_bishop => 'B',
+                    types.Piece.white_rook => 'R',
+                    types.Piece.white_queen => 'Q',
+                    types.Piece.white_king => 'K',
+                    types.Piece.black_pawn => 'p',
+                    types.Piece.black_knight => 'n',
+                    types.Piece.black_bishop => 'b',
+                    types.Piece.black_rook => 'r',
+                    types.Piece.black_queen => 'q',
+                    types.Piece.black_king => 'k',
+                    types.Piece.no_piece => '.',
                 };
                 std.debug.print("{c} ", .{piece});
             }
@@ -225,10 +225,10 @@ pub const Board = struct {
         std.debug.print("Side: {}\n", .{self.side});
         std.debug.print("EnPassant: {}\n", .{self.enPassant});
         std.debug.print("Castling: {c}{c}{c}{c}\n", .{
-            if (self.castlingRights.WhiteKingSideCastle) @as(u8, 'K') else @as(u8, '-'),
-            if (self.castlingRights.WhiteQueenSideCastle) @as(u8, 'Q') else @as(u8, '-'),
-            if (self.castlingRights.BlackKingSideCastle) @as(u8, 'k') else @as(u8, '-'),
-            if (self.castlingRights.BlackQueenSideCastle) @as(u8, 'q') else @as(u8, '-'),
+            if (self.castlingRights.white_king_side_castle) @as(u8, 'K') else @as(u8, '-'),
+            if (self.castlingRights.white_queen_side_castle) @as(u8, 'Q') else @as(u8, '-'),
+            if (self.castlingRights.black_king_side_castle) @as(u8, 'k') else @as(u8, '-'),
+            if (self.castlingRights.black_queen_side_castle) @as(u8, 'q') else @as(u8, '-'),
         });
         std.debug.print("Key: 0x{X}\n", .{self.key});
         std.debug.print("\n", .{});

@@ -3,6 +3,7 @@ const bitboard = @import("bitboard.zig");
 const types = @import("types.zig");
 const Board = @import("board.zig").Board;
 const move = @import("move.zig");
+const movegen = @import("movegen.zig");
 
 const allocator = std.testing.allocator;
 
@@ -10,25 +11,27 @@ const allocator = std.testing.allocator;
 const testFEN = "rnbqkbn1/pp1ppppP/8/2pR4/1pPpP3/5N2/PP1P1PPp/RNBQKBN1 b KQkq c3 1 2";
 
 pub fn main() anyerror!void {
-    bitboard.PreCalcBitboards.init();
+    bitboard.init();
 
     var b: Board = Board.emptyBoard();
     b.resetBoard();
     b.parseFEN(testFEN);
     b.print();
 
-    var ml: move.MoveList = .{
-        .moves = std.ArrayList(move.ExtMove).init(allocator),
-    };
-    const m = move.Move.castlingMove(types.Square.a1, types.Square.a8);
-    try ml.moves.append(.{
-        .move = m,
-        .value = 0,
-    });
-    ml.print();
+    // var ml: movegen.MoveList = .{
+    //     .moves = std.ArrayList(movegen.ExtMove).init(allocator),
+    // };
+    // const m = move.Move.castlingMove(types.Square.a1, types.Square.a8);
+    // try ml.moves.append(.{
+    //     .move = m,
+    //     .value = 0,
+    // });
+    // ml.print();
+    //
+    // try movegen.generateMoves(types.PieceType.queen, types.Color.black, false, b, &ml, b.byColorBB[@enumToInt(types.Color.White)]);
+    // ml.print();
 
-    try move.MoveGenerator.generateMoves(types.PieceType.Queen, types.Color.Black, false, b, &ml, b.byColorBB[@enumToInt(types.Color.White)]);
-    ml.print();
+    bitboard.pretty(b.byTypeBB[@enumToInt(types.PieceType.all_pieces)]);
 }
 
 // test "" {
