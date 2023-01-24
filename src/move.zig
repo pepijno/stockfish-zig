@@ -13,14 +13,14 @@ pub const Move = packed struct {
     from: Square,
     to: Square,
     promotion: u2,
-    specialBits: u2,
+    special_bits: u2,
 
     pub fn normalMove(from: Square, to: Square) @This() {
         return .{
             .from = from,
             .to = to,
             .promotion = 0x0,
-            .specialBits = 0x0,
+            .special_bits = 0x0,
         };
     }
 
@@ -35,7 +35,7 @@ pub const Move = packed struct {
                 PieceType.queen => 0x3,
                 else => 0x0,
             },
-            .specialBits = 0x1,
+            .special_bits = 0x1,
         };
     }
 
@@ -44,7 +44,7 @@ pub const Move = packed struct {
             .from = from,
             .to = to,
             .promotion = 0x0,
-            .specialBits = 0x2,
+            .special_bits = 0x2,
         };
     }
 
@@ -53,7 +53,7 @@ pub const Move = packed struct {
             .from = from,
             .to = to,
             .promotion = 0x0,
-            .specialBits = 0x3,
+            .special_bits = 0x3,
         };
     }
 
@@ -67,15 +67,15 @@ pub const Move = packed struct {
     }
 
     pub fn isPromotion(self: @This()) bool {
-        return self.specialBits == 0x1;
+        return self.special_bits == 0x1;
     }
 
     pub fn isEnPassant(self: @This()) bool {
-        return self.specialBits == 0x2;
+        return self.special_bits == 0x2;
     }
 
     pub fn isCastling(self: @This()) bool {
-        return self.specialBits == 0x3;
+        return self.special_bits == 0x3;
     }
 
     pub fn print(self: @This()) void {

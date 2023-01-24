@@ -28,10 +28,10 @@ pub fn main() anyerror!void {
     // });
     // ml.print();
     //
-    // try movegen.generateMoves(types.PieceType.queen, types.Color.black, false, b, &ml, b.byColorBB[@enumToInt(types.Color.White)]);
+    // try movegen.generateMoves(types.PieceType.queen, types.Color.black, false, b, &ml, b.by_color_bb[@enumToInt(types.Color.White)]);
     // ml.print();
 
-    bitboard.pretty(b.byTypeBB[@enumToInt(types.PieceType.all_pieces)]);
+    bitboard.pretty(b.by_type_bb[@enumToInt(types.PieceType.all_pieces)]);
 }
 
 // test "" {

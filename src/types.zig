@@ -5,14 +5,14 @@ pub const Rank = enum(u6) {
     rank1, rank2, rank3, rank4, rank5, rank6, rank7, rank8,
     // zig fmt: on
 };
-pub const N_RANK = std.enums.values(Rank).len;
+pub const n_rank = std.enums.values(Rank).len;
 
 pub const File = enum(u6) {
     // zig fmt: off
     a, b, c, d, e, f, g, h,
     // zig fmt: on
 };
-pub const N_FILE = std.enums.values(Rank).len;
+pub const n_file = std.enums.values(Rank).len;
 
 pub const SquareType = u6;
 pub const Square = enum(SquareType) {
@@ -39,10 +39,10 @@ pub const Square = enum(SquareType) {
         return @enumToInt(self);
     }
 };
-pub const N_SQUARES = std.enums.values(Square).len;
+pub const n_squares = std.enums.values(Square).len;
 
 pub inline fn makeSquare(file: File, rank: Rank) Square {
-    return @intToEnum(Square, N_FILE * @enumToInt(rank) + @enumToInt(file));
+    return @intToEnum(Square, n_file * @enumToInt(rank) + @enumToInt(file));
 }
 
 pub inline fn relativeRank(comptime color: Color, square: Square) u8 {
@@ -68,7 +68,7 @@ pub const Color = enum(u1) {
     white,
     black,
 };
-pub const N_COLORS = std.enums.values(Color).len;
+pub const n_colors = std.enums.values(Color).len;
 
 pub const PieceType = enum {
     no_piece_type,
@@ -84,7 +84,7 @@ pub const PieceType = enum {
         return @enumToInt(self);
     }
 };
-pub const N_PIECE_TYPES = std.enums.values(PieceType).len;
+pub const n_piece_types = std.enums.values(PieceType).len;
 
 pub const Piece = enum {
     no_piece,
@@ -105,9 +105,9 @@ pub const Piece = enum {
         return @enumToInt(self);
     }
 };
-pub const N_PIECES = std.enums.values(Piece).len;
+pub const n_pieces = std.enums.values(Piece).len;
 
-pub const N_CASTLING_RIGHTS = 16;
+pub const n_castling_rights = 16;
 pub const CastlingType = u4;
 pub const CastlingRights = packed struct {
     white_king_side_castle: bool = false,
@@ -115,7 +115,7 @@ pub const CastlingRights = packed struct {
     black_king_side_castle: bool = false,
     black_queen_side_castle: bool = false,
 
-    const CastlingRightsMask: [64]CastlingType = .{
+    const castling_rights_mask: [64]CastlingType = .{
         0x7, 0xF, 0xF, 0xF, 0x3, 0xF, 0xF, 0xB,
         0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
         0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
@@ -128,7 +128,7 @@ pub const CastlingRights = packed struct {
 
     pub fn updateCastlingRights(self: *@This(), square: Square) void {
         var rights = @bitCast(CastlingType, self.*);
-        rights &= CastlingRightsMask[@enumToInt(square)];
+        rights &= castling_rights_mask[@enumToInt(square)];
         self.* = @bitCast(CastlingRights, rights);
     }
 };

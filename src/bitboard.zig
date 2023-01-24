@@ -9,43 +9,43 @@ const Random = @import("random.zig").Random;
 
 pub const Bitboard = u64;
 
-pub const AllSquares: Bitboard = ~Bitboard(0);
-pub const DarkSquares: Bitboard = 0xAA55AA55AA55AA55;
+pub const all_squares: Bitboard = ~Bitboard(0);
+pub const dark_squares: Bitboard = 0xAA55AA55AA55AA55;
 
-pub const Rank1BB: Bitboard = 0xFF;
-pub const Rank2BB: Bitboard = Rank1BB << (1 * types.N_FILE);
-pub const Rank3BB: Bitboard = Rank1BB << (2 * types.N_FILE);
-pub const Rank4BB: Bitboard = Rank1BB << (3 * types.N_FILE);
-pub const Rank5BB: Bitboard = Rank1BB << (4 * types.N_FILE);
-pub const Rank6BB: Bitboard = Rank1BB << (5 * types.N_FILE);
-pub const Rank7BB: Bitboard = Rank1BB << (6 * types.N_FILE);
-pub const Rank8BB: Bitboard = Rank1BB << (7 * types.N_FILE);
+pub const rank_1_bb: Bitboard = 0xFF;
+pub const rank_2_bb: Bitboard = rank_1_bb << (1 * types.n_file);
+pub const rank_3_bb: Bitboard = rank_1_bb << (2 * types.n_file);
+pub const rank_4_bb: Bitboard = rank_1_bb << (3 * types.n_file);
+pub const rank_5_bb: Bitboard = rank_1_bb << (4 * types.n_file);
+pub const rank_6_bb: Bitboard = rank_1_bb << (5 * types.n_file);
+pub const rank_7_bb: Bitboard = rank_1_bb << (6 * types.n_file);
+pub const rank_8_bb: Bitboard = rank_1_bb << (7 * types.n_file);
 
-pub const FileABB: Bitboard = 0x0101010101010101;
-pub const FileBBB: Bitboard = FileABB << 1;
-pub const FileCBB: Bitboard = FileABB << 2;
-pub const FileDBB: Bitboard = FileABB << 3;
-pub const FileEBB: Bitboard = FileABB << 4;
-pub const FileFBB: Bitboard = FileABB << 5;
-pub const FileGBB: Bitboard = FileABB << 6;
-pub const FileHBB: Bitboard = FileABB << 7;
+pub const file_a_bb: Bitboard = 0x0101010101010101;
+pub const file_b_bb: Bitboard = file_a_bb << 1;
+pub const file_c_bb: Bitboard = file_a_bb << 2;
+pub const file_d_bb: Bitboard = file_a_bb << 3;
+pub const file_e_bb: Bitboard = file_a_bb << 4;
+pub const file_f_bb: Bitboard = file_a_bb << 5;
+pub const file_g_bb: Bitboard = file_a_bb << 6;
+pub const file_h_bb: Bitboard = file_a_bb << 7;
 
 // zig fmt: off
-pub const QueenSide: Bitboard   = FileABB | FileBBB | FileCBB | FileDBB;
-pub const CenterFiles: Bitboard = FileCBB | FileDBB | FileEBB | FileFBB;
-pub const KingSide: Bitboard    = FileEBB | FileFBB | FileGBB | FileHBB;
-pub const Center: Bitboard      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+pub const queen_side: Bitboard   = file_a_bb | file_b_bb | file_c_bb | file_d_bb;
+pub const center_files: Bitboard = file_c_bb | file_d_bb | file_e_bb | file_f_bb;
+pub const king_side: Bitboard    = file_e_bb | file_f_bb | file_g_bb | file_h_bb;
+pub const center: Bitboard      = (file_d_bb | file_e_bb) & (rank_4_bb | rank_5_bb);
 
-pub const KingFlank: [types.N_FILE]Bitboard = [_]Bitboard {
-    QueenSide ^ FileDBB, QueenSide, QueenSide,
-    CenterFiles, CenterFiles,
-    KingSide, KingSide, KingSide ^ FileEBB,
+pub const king_flank: [types.n_file]Bitboard = [_]Bitboard {
+    queen_side ^ file_d_bb, queen_side, queen_side,
+    center_files, center_files,
+    king_side, king_side, king_side ^ file_e_bb,
 };
 // zig fmt: on
 
-pub const SquareDistance = blk: {
+pub const square_distance = blk: {
     @setEvalBranchQuota(100_000);
-    var table: [types.N_SQUARES][types.N_SQUARES]u8 = undefined;
+    var table: [types.n_squares][types.n_squares]u8 = undefined;
     for (std.enums.values(Square)) |s1| {
         for (std.enums.values(Square)) |s2| {
             table[@enumToInt(s1)][@enumToInt(s2)] = @maximum(distance(types.File, s1, s2), distance(types.Rank, s1, s2));
@@ -54,16 +54,16 @@ pub const SquareDistance = blk: {
     break :blk table;
 };
 
-pub const SquareBB = blk: {
-    var table: [types.N_SQUARES]Bitboard = undefined;
+pub const square_bb = blk: {
+    var table: [types.n_squares]Bitboard = undefined;
     for (std.enums.values(Square)) |square| {
         table[@enumToInt(square)] = @as(Bitboard, 1) << @enumToInt(square);
     }
     break :blk table;
 };
 
-pub const PawnAttacks = blk: {
-    var table: [types.N_COLORS][types.N_SQUARES]Bitboard = undefined;
+pub const pawn_attacks = blk: {
+    var table: [types.n_colors][types.n_squares]Bitboard = undefined;
     for (std.enums.values(Square)) |square| {
         table[@enumToInt(Color.white)][@enumToInt(square)] = pawnAttacksByBitboard(Color.white, squareBB(square));
         table[@enumToInt(Color.black)][@enumToInt(square)] = pawnAttacksByBitboard(Color.black, squareBB(square));
@@ -71,9 +71,9 @@ pub const PawnAttacks = blk: {
     break :blk table;
 };
 
-pub var BetweenBB: [types.N_SQUARES][types.N_SQUARES]Bitboard = undefined;
-pub var LineBB: [types.N_SQUARES][types.N_SQUARES]Bitboard = undefined;
-pub var PseudoAttacks: [types.N_PIECE_TYPES][types.N_SQUARES]Bitboard = undefined;
+pub var between_bb: [types.n_squares][types.n_squares]Bitboard = undefined;
+pub var line_bb: [types.n_squares][types.n_squares]Bitboard = undefined;
+pub var pseude_attacks: [types.n_piece_types][types.n_squares]Bitboard = undefined;
 
 const Magic = struct {
     mask: Bitboard,
@@ -97,11 +97,11 @@ const Magic = struct {
     }
 };
 
-pub var RookMagics: [types.N_SQUARES]Magic = undefined;
-pub var BishopMagics: [types.N_SQUARES]Magic = undefined;
+pub var rook_magics: [types.n_squares]Magic = undefined;
+pub var bishop_magics: [types.n_squares]Magic = undefined;
 
 pub inline fn squareBB(square: Square) Bitboard {
-    return SquareBB[@enumToInt(square)];
+    return square_bb[@enumToInt(square)];
 }
 
 pub inline fn moreThanOne(bitboard: Bitboard) bool {
@@ -113,19 +113,19 @@ pub inline fn oppositeColors(square1: Square, square2: Square) bool {
 }
 
 pub inline fn rankBB(rank: types.Rank) Bitboard {
-    return Rank1BB << (8 * @enumToInt(rank));
+    return rank_1_bb << (8 * @enumToInt(rank));
 }
 
 pub inline fn squareRankBB(square: types.Square) Bitboard {
-    return Rank1BB << (8 * square.rank());
+    return rank_1_bb << (8 * square.rank());
 }
 
 pub inline fn fileBB(file: types.File) Bitboard {
-    return FileABB << @enumToInt(file);
+    return file_a_bb << @enumToInt(file);
 }
 
 pub inline fn squareFileBB(square: types.Square) Bitboard {
-    return FileABB << square.file();
+    return file_a_bb << square.file();
 }
 
 pub inline fn shift(comptime direction: Direction, bitboard: Bitboard) Bitboard {
@@ -133,10 +133,10 @@ pub inline fn shift(comptime direction: Direction, bitboard: Bitboard) Bitboard 
     return switch (direction) {
         Direction.north,     Direction.north_sorth => bitboard << @enumToInt(direction),
         Direction.south,     Direction.south_south => bitboard >> -@enumToInt(direction),
-        Direction.east,      Direction.north_east  => (bitboard << @enumToInt(direction)) & ~FileHBB,
-        Direction.south_east                       => (bitboard >> -@enumToInt(direction)) & ~FileHBB,
-        Direction.north_west                       => (bitboard << @enumToInt(direction)) & ~FileABB,
-        Direction.west,      Direction.south_west  => (bitboard >> -@enumToInt(direction)) & ~FileABB,
+        Direction.east,      Direction.north_east  => (bitboard << @enumToInt(direction)) & ~file_h_bb,
+        Direction.south_east                       => (bitboard >> -@enumToInt(direction)) & ~file_h_bb,
+        Direction.north_west                       => (bitboard << @enumToInt(direction)) & ~file_a_bb,
+        Direction.west,      Direction.south_west  => (bitboard >> -@enumToInt(direction)) & ~file_a_bb,
     };
     // zig fmt: on
 }
@@ -150,7 +150,7 @@ pub inline fn pawnAttacksByBitboard(comptime color: Color, bb: Bitboard) Bitboar
 }
 
 pub inline fn pawnAttacksBySquare(comptime color: Color, square: Square) Bitboard {
-    return PawnAttacks[@enumToInt(color)][@enumToInt(square)];
+    return pawn_attacks[@enumToInt(color)][@enumToInt(square)];
 }
 
 pub inline fn doublePawnAttacks(comptime color: Color, bb: Bitboard) Bitboard {
@@ -166,18 +166,18 @@ pub inline fn adjacentFiles(square: Square) Bitboard {
 }
 
 pub inline fn lineBB(square1: Square, square2: Square) Bitboard {
-    return LineBB[@enumToInt(square1)][@enumToInt(square2)];
+    return line_bb[@enumToInt(square1)][@enumToInt(square2)];
 }
 
 pub inline fn betweenBB(square1: Square, square2: Square) Bitboard {
-    return BetweenBB[@enumToInt(square1)][@enumToInt(square2)];
+    return between_bb[@enumToInt(square1)][@enumToInt(square2)];
 }
 
 pub inline fn forwardRanksBB(color: Color, square: Square) Bitboard {
     if (color == Color.white) {
-        return ~Rank1BB << 8 * types.relativeRank(Color.white, square);
+        return ~rank_1_bb << 8 * types.relativeRank(Color.white, square);
     } else {
-        return ~Rank8BB >> 8 * types.relativeRank(Color.black, square);
+        return ~rank_8_bb >> 8 * types.relativeRank(Color.black, square);
     }
 }
 
@@ -203,7 +203,7 @@ pub inline fn distance(comptime T: type, x: Square, y: Square) u8 {
     } else if (T == types.Rank) {
         return std.math.absInt(@as(i8, x.rank()) - @as(i8, y.rank())) catch unreachable;
     } else if (T == Square) {
-        return SquareDistance[@enumToInt(x)][@enumToInt(y)];
+        return square_distance[@enumToInt(x)][@enumToInt(y)];
     } else {
         unreachable;
     }
@@ -220,10 +220,10 @@ pub inline fn rankEdgeDistance(rank: u8) u8 {
 pub inline fn attacksBB(comptime pieceType: PieceType, square: Square, occupied: Bitboard) Bitboard {
     const sq = @enumToInt(square);
     return switch (pieceType) {
-        PieceType.bishop => BishopMagics[sq].attacks[BishopMagics[sq].index(occupied)],
-        PieceType.rook => RookMagics[sq].attacks[RookMagics[sq].index(occupied)],
+        PieceType.bishop => bishop_magics[sq].attacks[bishop_magics[sq].index(occupied)],
+        PieceType.rook => rook_magics[sq].attacks[rook_magics[sq].index(occupied)],
         PieceType.queen => attacksBB(PieceType.bishop, square, occupied) | attacksBB(PieceType.rook, square, occupied),
-        else => PseudoAttacks[@enumToInt(pieceType)][sq],
+        else => pseude_attacks[@enumToInt(pieceType)][sq],
     };
 }
 
@@ -233,7 +233,7 @@ pub fn attacksBBRuntime(pieceType: PieceType, square: Square, occupied: Bitboard
         PieceType.bishop => attacksBB(PieceType.bishop, square, occupied),
         PieceType.rook => attacksBB(PieceType.rook, square, occupied),
         PieceType.queen => attacksBB(PieceType.bishop, square, occupied) | attacksBB(PieceType.rook, square, occupied),
-        else => PseudoAttacks[@enumToInt(pieceType)][sq],
+        else => pseude_attacks[@enumToInt(pieceType)][sq],
     };
 }
 
@@ -261,50 +261,50 @@ pub inline fn safeDestination(square: Square, step: i8) Bitboard {
         return 0;
     }
 
-    const newSquare: Square = @intToEnum(Square, @intCast(u6, new));
-    return if (distance(Square, square, newSquare) <= 2) squareBB(newSquare) else 0;
+    const new_square: Square = @intToEnum(Square, @intCast(u6, new));
+    return if (distance(Square, square, new_square) <= 2) squareBB(new_square) else 0;
 }
 
-var rookTable: [0x19000]Bitboard = undefined;
-var bishopTable: [0x1480]Bitboard = undefined;
+var rook_table: [0x19000]Bitboard = undefined;
+var bishop_table: [0x1480]Bitboard = undefined;
 
 pub fn init() void {
-    initMagics(PieceType.bishop, bishopTable[0..], BishopMagics[0..]);
-    initMagics(PieceType.rook, rookTable[0..], RookMagics[0..]);
+    initMagics(PieceType.bishop, bishop_table[0..], bishop_magics[0..]);
+    initMagics(PieceType.rook, rook_table[0..], rook_magics[0..]);
 
     for (std.enums.values(Square)) |square| {
-        PseudoAttacks[@enumToInt(PieceType.king)][@enumToInt(square)] = 0;
+        pseude_attacks[@enumToInt(PieceType.king)][@enumToInt(square)] = 0;
         for ([_]i8{ -9, -8, -7, -1, 1, 7, 8, 9 }) |step| {
-            PseudoAttacks[@enumToInt(PieceType.king)][@enumToInt(square)] |= safeDestination(square, step);
+            pseude_attacks[@enumToInt(PieceType.king)][@enumToInt(square)] |= safeDestination(square, step);
         }
 
-        PseudoAttacks[@enumToInt(PieceType.knight)][@enumToInt(square)] = 0;
+        pseude_attacks[@enumToInt(PieceType.knight)][@enumToInt(square)] = 0;
         for ([_]i8{ -17, -15, -10, -6, 6, 10, 15, 17 }) |step| {
-            PseudoAttacks[@enumToInt(PieceType.knight)][@enumToInt(square)] |= safeDestination(square, step);
+            pseude_attacks[@enumToInt(PieceType.knight)][@enumToInt(square)] |= safeDestination(square, step);
         }
 
-        PseudoAttacks[@enumToInt(PieceType.bishop)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
-        PseudoAttacks[@enumToInt(PieceType.rook)][@enumToInt(square)] = attacksBB(PieceType.rook, square, 0);
-        PseudoAttacks[@enumToInt(PieceType.queen)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
-        PseudoAttacks[@enumToInt(PieceType.queen)][@enumToInt(square)] |= attacksBB(PieceType.rook, square, 0);
+        pseude_attacks[@enumToInt(PieceType.bishop)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
+        pseude_attacks[@enumToInt(PieceType.rook)][@enumToInt(square)] = attacksBB(PieceType.rook, square, 0);
+        pseude_attacks[@enumToInt(PieceType.queen)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
+        pseude_attacks[@enumToInt(PieceType.queen)][@enumToInt(square)] |= attacksBB(PieceType.rook, square, 0);
 
         inline for ([_]PieceType{ PieceType.bishop, PieceType.rook }) |piece_type| {
             for (std.enums.values(Square)) |sq| {
-                if (PseudoAttacks[@enumToInt(piece_type)][@enumToInt(square)] & squareBB(sq) != 0) {
-                    LineBB[@enumToInt(square)][@enumToInt(sq)] = (attacksBB(piece_type, square, 0) & attacksBB(piece_type, sq, 0)) | squareBB(square) | squareBB(sq);
-                    BetweenBB[@enumToInt(square)][@enumToInt(sq)] = (attacksBB(piece_type, square, squareBB(sq)) & attacksBB(piece_type, sq, squareBB(square)));
+                if (pseude_attacks[@enumToInt(piece_type)][@enumToInt(square)] & squareBB(sq) != 0) {
+                    line_bb[@enumToInt(square)][@enumToInt(sq)] = (attacksBB(piece_type, square, 0) & attacksBB(piece_type, sq, 0)) | squareBB(square) | squareBB(sq);
+                    between_bb[@enumToInt(square)][@enumToInt(sq)] = (attacksBB(piece_type, square, squareBB(sq)) & attacksBB(piece_type, sq, squareBB(square)));
                 }
-                BetweenBB[@enumToInt(square)][@enumToInt(sq)] |= squareBB(sq);
+                between_bb[@enumToInt(square)][@enumToInt(sq)] |= squareBB(sq);
             }
         }
     }
 }
 
 fn slidingAttack(comptime piece_type: PieceType, square: Square, occupied: Bitboard) Bitboard {
-    const RookDirections = [_]Direction{Direction.north, Direction.south, Direction.east, Direction.west};
-    const BishopDirections = [_]Direction{Direction.north_east, Direction.south_east, Direction.south_west, Direction.north_west};
+    const rook_directions = [_]Direction{Direction.north, Direction.south, Direction.east, Direction.west};
+    const bishop_directions = [_]Direction{Direction.north_east, Direction.south_east, Direction.south_west, Direction.north_west};
 
-    const directions = comptime if (piece_type == PieceType.rook) RookDirections else BishopDirections;
+    const directions = comptime if (piece_type == PieceType.rook) rook_directions else bishop_directions;
 
     var attacks: Bitboard = 0;
     for (directions) |dir| {
@@ -320,7 +320,7 @@ fn slidingAttack(comptime piece_type: PieceType, square: Square, occupied: Bitbo
 
 fn initMagics(comptime piece_type: PieceType, table: []Bitboard, magics: []Magic) void {
     // zig fmt: off
-    const seeds = [2][types.N_RANK]u64{
+    const seeds = [2][types.n_rank]u64{
         [_]u64{ 8977, 44560, 54343, 38998, 5731, 92505, 104912, 17020 },
         [_]u64{ 728, 10316, 55013, 32803, 12281, 15100, 16645, 255 }
     };
@@ -333,7 +333,7 @@ fn initMagics(comptime piece_type: PieceType, table: []Bitboard, magics: []Magic
     var size: usize = 0;
 
     for (std.enums.values(Square)) |square| {
-        const edges: Bitboard = ((Rank1BB | Rank8BB) & ~(squareRankBB(square))) | ((FileABB | FileHBB) & ~(squareFileBB(square)));
+        const edges: Bitboard = ((rank_1_bb | rank_8_bb) & ~(squareRankBB(square))) | ((file_a_bb | file_h_bb) & ~(squareFileBB(square)));
 
         var magic: *Magic = &magics[@enumToInt(square)];
         magic.mask = slidingAttack(piece_type, square, 0) & ~edges;
@@ -403,7 +403,7 @@ pub inline fn unset(bb: *Bitboard, square: Square) void {
 
 pub fn pretty(bb: Bitboard) void {
     std.debug.print("+---+---+---+---+---+---+---+---+\n", .{});
-    var rank: usize = types.N_RANK;
+    var rank: usize = types.n_rank;
     while (rank > 0) {
         rank -= 1;
         for (std.enums.values(types.File)) |file| {
