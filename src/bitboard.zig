@@ -1,4 +1,5 @@
 const std = @import("std");
+const assert = std.debug.assert;
 
 const types = @import("types.zig");
 const Square = types.Square;
@@ -105,11 +106,11 @@ pub inline fn squareBB(square: Square) Bitboard {
 }
 
 pub inline fn moreThanOne(bitboard: Bitboard) bool {
-    return bitboard & (bitboard - 1);
+    return (bitboard & (bitboard - 1)) != 0;
 }
 
 pub inline fn oppositeColors(square1: Square, square2: Square) bool {
-    return (@enumToInt(square1) + square1.rank() + @enumToInt(square2) + square2.rank()) & 1;
+    return ((@enumToInt(square1) + square1.rank() + @enumToInt(square2) + square2.rank()) & 1) == 1;
 }
 
 pub inline fn rankBB(rank: types.Rank) Bitboard {
@@ -131,7 +132,7 @@ pub inline fn squareFileBB(square: types.Square) Bitboard {
 pub inline fn shift(comptime direction: Direction, bitboard: Bitboard) Bitboard {
     // zig fmt: off
     return switch (direction) {
-        Direction.north,     Direction.north_sorth => bitboard << @enumToInt(direction),
+        Direction.north,     Direction.north_north => bitboard << @enumToInt(direction),
         Direction.south,     Direction.south_south => bitboard >> -@enumToInt(direction),
         Direction.east,      Direction.north_east  => (bitboard << @enumToInt(direction)) & ~file_h_bb,
         Direction.south_east                       => (bitboard >> -@enumToInt(direction)) & ~file_h_bb,
@@ -141,7 +142,7 @@ pub inline fn shift(comptime direction: Direction, bitboard: Bitboard) Bitboard 
     // zig fmt: on
 }
 
-pub inline fn pawnAttacksByBitboard(comptime color: Color, bb: Bitboard) Bitboard {
+pub inline fn pawnAttacksByBitboard(color: Color, bb: Bitboard) Bitboard {
     if (color == Color.white) {
         return shift(Direction.north_west, bb) | shift(Direction.north_east, bb);
     } else {
@@ -149,7 +150,7 @@ pub inline fn pawnAttacksByBitboard(comptime color: Color, bb: Bitboard) Bitboar
     }
 }
 
-pub inline fn pawnAttacksBySquare(comptime color: Color, square: Square) Bitboard {
+pub inline fn pawnAttacksBySquare(color: Color, square: Square) Bitboard {
     return pawn_attacks[@enumToInt(color)][@enumToInt(square)];
 }
 
@@ -175,9 +176,9 @@ pub inline fn betweenBB(square1: Square, square2: Square) Bitboard {
 
 pub inline fn forwardRanksBB(color: Color, square: Square) Bitboard {
     if (color == Color.white) {
-        return ~rank_1_bb << 8 * types.relativeRank(Color.white, square);
+        return ~rank_1_bb << @intCast(u6, 8 * types.relativeRank(Color.white, square));
     } else {
-        return ~rank_8_bb >> 8 * types.relativeRank(Color.black, square);
+        return ~rank_8_bb >> @intCast(u6, 8 * types.relativeRank(Color.black, square));
     }
 }
 
@@ -194,7 +195,7 @@ pub inline fn passedPawnSpan(color: Color, square: Square) Bitboard {
 }
 
 pub inline fn aligned(square1: Square, square2: Square, square3: Square) bool {
-    return lineBB(square1, square2) & (Bitboard(1) << squareBB(square3));
+    return (lineBB(square1, square2) & squareBB(square3)) != 0;
 }
 
 pub inline fn distance(comptime T: type, x: Square, y: Square) u8 {
@@ -217,33 +218,38 @@ pub inline fn rankEdgeDistance(rank: u8) u8 {
     return @minimum(rank, @enumToInt(types.File.h) - rank);
 }
 
-pub inline fn attacksBB(comptime pieceType: PieceType, square: Square, occupied: Bitboard) Bitboard {
+pub inline fn pseudoAttacksBB(piece_type: PieceType, square: Square) Bitboard {
+    assert(piece_type != types.PieceType.pawn);
+    return pseude_attacks[@enumToInt(piece_type)][@enumToInt(square)];
+}
+
+pub inline fn attacksBB(piece_type: PieceType, square: Square, occupied: Bitboard) Bitboard {
     const sq = @enumToInt(square);
-    return switch (pieceType) {
+    return switch (piece_type) {
         PieceType.bishop => bishop_magics[sq].attacks[bishop_magics[sq].index(occupied)],
         PieceType.rook => rook_magics[sq].attacks[rook_magics[sq].index(occupied)],
         PieceType.queen => attacksBB(PieceType.bishop, square, occupied) | attacksBB(PieceType.rook, square, occupied),
-        else => pseude_attacks[@enumToInt(pieceType)][sq],
+        else => pseude_attacks[@enumToInt(piece_type)][sq],
     };
 }
-
-pub fn attacksBBRuntime(pieceType: PieceType, square: Square, occupied: Bitboard) Bitboard {
-    const sq = @enumToInt(square);
-    return switch (pieceType) {
-        PieceType.bishop => attacksBB(PieceType.bishop, square, occupied),
-        PieceType.rook => attacksBB(PieceType.rook, square, occupied),
-        PieceType.queen => attacksBB(PieceType.bishop, square, occupied) | attacksBB(PieceType.rook, square, occupied),
-        else => pseude_attacks[@enumToInt(pieceType)][sq],
-    };
-}
+//
+// pub fn attacksBBRuntime(piece_type: PieceType, square: Square, occupied: Bitboard) Bitboard {
+//     const sq = @enumToInt(square);
+//     return switch (piece_type) {
+//         PieceType.bishop => attacksBB(PieceType.bishop, square, occupied),
+//         PieceType.rook => attacksBB(PieceType.rook, square, occupied),
+//         PieceType.queen => attacksBB(PieceType.bishop, square, occupied) | attacksBB(PieceType.rook, square, occupied),
+//         else => pseude_attacks[@enumToInt(piece_type)][sq],
+//     };
+// }
 
 pub inline fn leastSignificantSquareBB(bb: Bitboard) Bitboard {
     return bb & -bb;
 }
 
 pub inline fn popLsb(bb: *Bitboard) Square {
-    const square = @intToEnum(Square, @ctz(Bitboard, bb));
-    bb &= bb - 1;
+    const square = @intToEnum(Square, @ctz(Bitboard, bb.*));
+    bb.* &= bb.* - 1;
     return square;
 }
 

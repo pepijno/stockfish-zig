@@ -2,25 +2,31 @@ const std = @import("std");
 const assert = std.debug.assert;
 
 const types = @import("types.zig");
-const Board = @import("board.zig").Board;
 const bb = @import("bitboard.zig");
 const Bitboard = bb.Bitboard;
 const Color = types.Color;
 const Square = types.Square;
 const PieceType = types.PieceType;
 
+pub const MoveType = enum(u2) {
+    normal,
+    promotion,
+    en_passant,
+    castling,
+};
+
 pub const Move = packed struct {
     from: Square,
     to: Square,
     promotion: u2,
-    special_bits: u2,
+    move_type: MoveType,
 
     pub fn normalMove(from: Square, to: Square) @This() {
         return .{
             .from = from,
             .to = to,
             .promotion = 0x0,
-            .special_bits = 0x0,
+            .move_type = MoveType.normal,
         };
     }
 
@@ -35,7 +41,7 @@ pub const Move = packed struct {
                 PieceType.queen => 0x3,
                 else => 0x0,
             },
-            .special_bits = 0x1,
+            .move_type = MoveType.promotion,
         };
     }
 
@@ -44,7 +50,7 @@ pub const Move = packed struct {
             .from = from,
             .to = to,
             .promotion = 0x0,
-            .special_bits = 0x2,
+            .move_type = MoveType.en_passant,
         };
     }
 
@@ -53,7 +59,7 @@ pub const Move = packed struct {
             .from = from,
             .to = to,
             .promotion = 0x0,
-            .special_bits = 0x3,
+            .move_type = MoveType.castling,
         };
     }
 
@@ -66,26 +72,12 @@ pub const Move = packed struct {
         };
     }
 
-    pub fn isPromotion(self: @This()) bool {
-        return self.special_bits == 0x1;
-    }
-
-    pub fn isEnPassant(self: @This()) bool {
-        return self.special_bits == 0x2;
-    }
-
-    pub fn isCastling(self: @This()) bool {
-        return self.special_bits == 0x3;
-    }
-
     pub fn print(self: @This()) void {
-        std.debug.print("from: {}, to: {}, promotion: {}, isPromotion: {}, isEnPassant: {}, isCastling: {}\n", .{
+        std.debug.print("from: {}, to: {}, promotion: {}, move_type: {}\n", .{
             self.from,
             self.to,
             self.promotionToPiece(),
-            self.isPromotion(),
-            self.isEnPassant(),
-            self.isCastling(),
+            self.move_type
         });
     }
 };

@@ -13,13 +13,13 @@ const HashKey = struct {
     side: Key,
     no_pawns: Key,
 
-    fn create() @This() {
+    pub fn create() @This() {
         var rng: Random = comptime Random.create(1070372);
         @setEvalBranchQuota(100000);
         return .{
             .piece_square = blk: {
                 var psq: [types.n_pieces][types.n_squares]Key = undefined;
-                for (std.enums.values(types.Piece)) |piece| {
+                for (types.pieces_table) |piece| {
                     for (std.enums.values(types.Square)) |square| {
                         psq[@enumToInt(piece)][@enumToInt(square)] = rng.rand();
                     }
@@ -46,3 +46,7 @@ const HashKey = struct {
         };
     }
 };
+
+pub fn makeKey(seed: u64) Key {
+    return seed * 6364136223846793005 + 1442695040888963407;
+}
