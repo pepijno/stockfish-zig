@@ -109,10 +109,6 @@ pub const PieceType = enum {
     queen,
     king,
     all_pieces,
-
-    pub inline fn asKey(self: @This()) u6 {
-        return @enumToInt(self);
-    }
 };
 pub const n_piece_types = std.enums.values(PieceType).len;
 

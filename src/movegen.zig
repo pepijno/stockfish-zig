@@ -32,13 +32,19 @@ pub const MoveList = struct {
     moves: [MAX_MOVES]ExtMove = undefined,
     current: usize = 0,
 
-    pub fn print(self: @This()) void {
-        std.debug.print("Size: {}\n", .{self.current});
+    pub fn print(self: @This()) !void {
+        var out = std.io.getStdOut().writer();
+        var buffer = std.io.bufferedWriter(out);
+        var buf_out = buffer.writer();
+
+        try buf_out.print("Size: {}\n", .{self.current});
         var i: usize = 0;
         while (i < self.current) : (i += 1) {
             const extMove = self.moves[i];
-            std.debug.print("({}): {{ move: {}, value: {} }}\n", .{ i, extMove.move, extMove.value });
+            try buf_out.print("({}): {{ move: {}, value: {} }}\n", .{ i, extMove.move, extMove.value });
         }
+
+        try buffer.flush();
     }
 
     pub fn addMove(self: *@This(), m: move.Move) void {

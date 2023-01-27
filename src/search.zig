@@ -3,10 +3,17 @@ const std = @import("std");
 const position = @import("position.zig");
 const movegen = @import("movegen.zig");
 const move = @import("move.zig");
+const types = @import("types.zig");
 
 pub const Depth = i32;
 
 pub fn perft(comptime root: bool, allocator: std.mem.Allocator, pos: *position.Position, depth: Depth) u64 {
+    var out = std.io.getStdOut().writer();
+    var buffer = std.io.bufferedWriter(out);
+    var buf_out = buffer.writer();
+
+    var start = std.time.milliTimestamp();
+
     var cnt: u64 = 0;
     var nodes: u64 = 0;
     const leaf = (depth == 2);
@@ -35,8 +42,16 @@ pub fn perft(comptime root: bool, allocator: std.mem.Allocator, pos: *position.P
             pos.undoMove(m);
         }
         if (root) {
-            std.log.info("{s}: {}", .{m.toString(allocator), cnt});
+            buf_out.print("{s}: {}\n", .{m.toString(allocator), cnt}) catch unreachable;
+            buffer.flush() catch unreachable;
         }
+    }
+
+    var end = std.time.milliTimestamp();
+
+    if (root) {
+        buf_out.print("Time: {}s\n", .{@intToFloat(f32, end - start) / 1000.0}) catch unreachable;
+        buffer.flush() catch unreachable;
     }
 
     return nodes;

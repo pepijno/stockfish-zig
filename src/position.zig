@@ -1037,27 +1037,32 @@ pub const Position = struct {
     }
 
     pub fn print(self: @This(), allocator: std.mem.Allocator) !void {
-        std.debug.print("\n +---+---+---+---+---+---+---+---+\n", .{});
+        var out = std.io.getStdOut().writer();
+        var buffer = std.io.bufferedWriter(out);
+        var buf_out = buffer.writer();
+
+        try buf_out.print("\n +---+---+---+---+---+---+---+---+\n", .{});
 
         var r: i8 = @enumToInt(types.Rank.rank8);
         while (r >= @enumToInt(types.Rank.rank1)) : (r -= 1) {
             for (std.enums.values(types.File)) |f| {
-                std.debug.print(" | {c}", .{piece_to_char[@enumToInt(self.pieceOn(types.makeSquare(f, @intToEnum(types.Rank, r))))]});
+                try buf_out.print(" | {c}", .{piece_to_char[@enumToInt(self.pieceOn(types.makeSquare(f, @intToEnum(types.Rank, r))))]});
             }
 
-            std.debug.print(" | {}\n +---+---+---+---+---+---+---+---+\n", .{1 + r});
+            try buf_out.print(" | {}\n +---+---+---+---+---+---+---+---+\n", .{1 + r});
         }
 
-        std.debug.print("   a   b   c   d   e   f   g   h\n", .{});
-        std.debug.print("\nFen: {s}\nKey: 0x{X}\n", .{ try self.fen(allocator), self.key() });
-        std.debug.print("Checkers: ", .{});
+        try buf_out.print("   a   b   c   d   e   f   g   h\n", .{});
+        try buf_out.print("\nFen: {s}\nKey: 0x{X}\n", .{ try self.fen(allocator), self.key() });
+        try buf_out.print("Checkers: ", .{});
 
         var checks = self.checkers();
         while (checks != 0) {
-            std.debug.print("{s} ", .{bb.popLsb(&checks).toString(allocator)});
+            try buf_out.print("{s} ", .{bb.popLsb(&checks).toString(allocator)});
         }
         //TODO tablebase
-        std.debug.print("\n", .{});
+        try buf_out.print("\n", .{});
+        try buffer.flush();
     }
 
     pub fn fen(self: @This(), allocator: std.mem.Allocator) ![]const u8 {

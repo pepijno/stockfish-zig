@@ -407,19 +407,25 @@ pub inline fn unset(bb: *Bitboard, square: Square) void {
     bb.* = (bb.* & ~(squareBB(square)));
 }
 
-pub fn pretty(bb: Bitboard) void {
-    std.debug.print("+---+---+---+---+---+---+---+---+\n", .{});
+pub fn print(bb: Bitboard) !void {
+    var out = std.io.getStdOut().writer();
+    var buffer = std.io.bufferedWriter(out);
+    var buf_out = buffer.writer();
+
+    try buf_out.print("+---+---+---+---+---+---+---+---+\n", .{});
+
     var rank: usize = types.n_rank;
     while (rank > 0) {
         rank -= 1;
         for (std.enums.values(types.File)) |file| {
             if (bb & (@as(Bitboard, 1) << @enumToInt(types.makeSquare(file, @intToEnum(types.Rank, rank)))) != 0) {
-                std.debug.print("| X ", .{});
+                try buf_out.print("| X ", .{});
             } else {
-                std.debug.print("|   ", .{});
+                try buf_out.print("|   ", .{});
             }
         }
-        std.debug.print("| {}\n+---+---+---+---+---+---+---+---+\n", .{1 + rank});
+        try buf_out.print("| {}\n+---+---+---+---+---+---+---+---+\n", .{1 + rank});
     }
-    std.debug.print("  a   b   c   d   e   f   g   h\n", .{});
+    try buf_out.print("  a   b   c   d   e   f   g   h\n", .{});
+    try buffer.flush();
 }
