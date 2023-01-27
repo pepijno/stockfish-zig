@@ -6,8 +6,8 @@ const bb = @import("bitboard.zig");
 const S = types.makeScore;
 
 const bonus = [_][types.n_rank][types.n_file / 2]types.Score {
-    [_][types.n_file / 2]types.Score{ [_]types.Score{ types.Score.zero_score } ** (types.n_file / 2) } ** types.n_rank,
-    [_][types.n_file / 2]types.Score{ [_]types.Score{ types.Score.zero_score } ** (types.n_file / 2) } ** types.n_rank,
+    [_][types.n_file / 2]types.Score{ [_]types.Score{ .zero_score } ** (types.n_file / 2) } ** types.n_rank,
+    [_][types.n_file / 2]types.Score{ [_]types.Score{ .zero_score } ** (types.n_file / 2) } ** types.n_rank,
     [_][types.n_file / 2]types.Score{ // Knight
         [_]types.Score{ S(-175, -96), S(-92,-65), S(-74,-49), S(-73,-21) },
         [_]types.Score{ S( -77, -67), S(-41,-54), S(-27,-18), S(-15,  8) },
@@ -61,14 +61,14 @@ const bonus = [_][types.n_rank][types.n_file / 2]types.Score {
 };
 
 const p_bonus = [types.n_rank][types.n_file]types.Score{ // Pawn (asymmetric distribution)
-    [_]types.Score{ types.Score.zero_score } ** types.n_file,
+    [_]types.Score{ .zero_score } ** types.n_file,
     [_]types.Score{ S(  2, -8), S(  4, -6), S( 11,  9), S( 18,  5), S( 16, 16), S( 21,  6), S(  9, -6), S( -3,-18) },
     [_]types.Score{ S( -9, -9), S(-15, -7), S( 11,-10), S( 15,  5), S( 31,  2), S( 23,  3), S(  6, -8), S(-20, -5) },
     [_]types.Score{ S( -3,  7), S(-20,  1), S(  8, -8), S( 19, -2), S( 39,-14), S( 17,-13), S(  2,-11), S( -5, -6) },
     [_]types.Score{ S( 11, 12), S( -4,  6), S(-11,  2), S(  2, -6), S( 11, -5), S(  0, -4), S(-12, 14), S(  5,  9) },
     [_]types.Score{ S(  3, 27), S(-11, 18), S( -6, 19), S( 22, 29), S( -8, 30), S( -5,  9), S(-14,  8), S(-11, 14) },
     [_]types.Score{ S( -7, -1), S(  6,-14), S( -2, 13), S(-11, 22), S(  4, 24), S(-14, 17), S( 10,  7), S( -9,  7) },
-    [_]types.Score{ types.Score.zero_score } ** types.n_file,
+    [_]types.Score{ .zero_score } ** types.n_file,
 };
 
 pub const psq = blk: {
@@ -76,12 +76,12 @@ pub const psq = blk: {
 
     var table: [types.n_pieces][types.n_squares]types.Score = undefined;
 
-    for ([_]types.Piece{ types.Piece.white_pawn, types.Piece.white_knight, types.Piece.white_bishop, types.Piece.white_rook, types.Piece.white_queen, types.Piece.white_king }) |piece| {
+    for ([_]types.Piece{ .white_pawn, .white_knight, .white_bishop, .white_rook, .white_queen, .white_king }) |piece| {
         const score = types.makeScore(@enumToInt(types.piece_value[@enumToInt(types.Phase.mg)][@enumToInt(piece)]), @enumToInt(types.piece_value[@enumToInt(types.Phase.eg)][@enumToInt(piece)]));
 
         for (std.enums.values(types.Square)) |sq| {
             const f = bb.fileEdgeDistance(sq.file());
-            table[@enumToInt(piece)][@enumToInt(sq)] = score.add(if (piece.typeOf() == types.PieceType.pawn) p_bonus[sq.rank()][sq.file()] else bonus[@enumToInt(piece)][sq.rank()][f]);
+            table[@enumToInt(piece)][@enumToInt(sq)] = score.add(if (piece.typeOf() == .pawn) p_bonus[sq.rank()][sq.file()] else bonus[@enumToInt(piece)][sq.rank()][f]);
             table[@enumToInt(piece) ^ 8][@enumToInt(sq) ^ @enumToInt(types.Square.a8)] = types.Score.zero_score.sub(table[@enumToInt(piece)][@enumToInt(sq)]);
         }
     }

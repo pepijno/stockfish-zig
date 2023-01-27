@@ -33,7 +33,7 @@ pub const MoveList = struct {
     current: usize = 0,
 
     pub fn print(self: @This()) void {
-        std.debug.print("Size: {}\n", .{self.moves.len});
+        std.debug.print("Size: {}\n", .{self.current});
         var i: usize = 0;
         while (i < self.current) : (i += 1) {
             const extMove = self.moves[i];
@@ -104,15 +104,15 @@ pub const MoveList = struct {
 
     fn generatePawnMoves(self: *@This(), comptime move_gen_type: MoveGenType, comptime us: Color, position: Position, target: Bitboard) void {
         // zig fmt: off
-        const them: Color           = comptime us.flip();
-        const t_rank_7_bb: Bitboard = comptime if (us == .white) bb.rank_7_bb else bb.rank_2_bb;
-        const t_rank_2_bb: Bitboard = comptime if (us == .white) bb.rank_3_bb else bb.rank_6_bb;
-        const up: Direction         = comptime types.pawnPush(us);
-        const up_right: Direction   = comptime if (us == .white) .north_east else .south_west;
-        const up_left: Direction    = comptime if (us == .white) .north_west else .south_east;
+        const them: Color              = comptime us.flip();
+        const t_rank_7_bb: Bitboard    = comptime if (us == .white) bb.rank_7_bb else bb.rank_2_bb;
+        const t_rank_2_bb: Bitboard    = comptime if (us == .white) bb.rank_3_bb else bb.rank_6_bb;
+        const up: Direction            = comptime types.pawnPush(us);
+        const up_right: Direction      = comptime if (us == .white) .north_east else .south_west;
+        const up_left: Direction       = comptime if (us == .white) .north_west else .south_east;
 
-        const empty_squares: Bitboard = ~position.pieces();
-        const enemies: Bitboard       = if (move_gen_type == .evasions) position.checkers() else position.piecesByColor(them);
+        const empty_squares: Bitboard  = ~position.pieces();
+        const enemies: Bitboard        = if (move_gen_type == .evasions) position.checkers() else position.piecesByColor(them);
 
         const pawns_on_7: Bitboard     = position.piecesByColorAndType(us, .pawn) &  t_rank_7_bb;
         const pawns_not_on_7: Bitboard = position.piecesByColorAndType(us, .pawn) & ~t_rank_7_bb;
@@ -151,6 +151,10 @@ pub const MoveList = struct {
             var b1: Bitboard = bb.shift(up_right, pawns_on_7) & enemies;
             var b2: Bitboard = bb.shift(up_left, pawns_on_7) & enemies;
             var b3: Bitboard = bb.shift(up, pawns_on_7) & empty_squares;
+
+            if (move_gen_type == .evasions) {
+                b3 &= target;
+            }
 
             while (b1 != 0) {
                 self.makePromotions(move_gen_type, up_right, bb.popLsb(&b1));

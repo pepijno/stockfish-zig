@@ -134,10 +134,10 @@ pub inline fn shift(comptime direction: Direction, bitboard: Bitboard) Bitboard 
     return switch (direction) {
         Direction.north,     Direction.north_north => bitboard << @enumToInt(direction),
         Direction.south,     Direction.south_south => bitboard >> -@enumToInt(direction),
-        Direction.east,      Direction.north_east  => (bitboard << @enumToInt(direction)) & ~file_h_bb,
-        Direction.south_east                       => (bitboard >> -@enumToInt(direction)) & ~file_h_bb,
-        Direction.north_west                       => (bitboard << @enumToInt(direction)) & ~file_a_bb,
-        Direction.west,      Direction.south_west  => (bitboard >> -@enumToInt(direction)) & ~file_a_bb,
+        Direction.east,      Direction.north_east  => (bitboard << @enumToInt(direction)) & ~file_a_bb,
+        Direction.south_east                       => (bitboard >> -@enumToInt(direction)) & ~file_a_bb,
+        Direction.north_west                       => (bitboard << @enumToInt(direction)) & ~file_h_bb,
+        Direction.west,      Direction.south_west  => (bitboard >> -@enumToInt(direction)) & ~file_h_bb,
     };
     // zig fmt: on
 }

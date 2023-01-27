@@ -80,4 +80,8 @@ pub const Move = packed struct {
             self.move_type
         });
     }
+
+    pub fn toString(self: @This(), allocator: std.mem.Allocator) ![]const u8 {
+        return try std.fmt.allocPrint(allocator, "{{from: {s}, to: {s}, promotion: {}, move_type: {}}}", .{self.from.toString(allocator), self.to.toString(allocator), self.promotionToPiece(), self.move_type});
+    }
 };

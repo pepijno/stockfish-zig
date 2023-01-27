@@ -232,12 +232,12 @@ pub const Position = struct {
     }
 
     pub inline fn attackersTo(self: @This(), sq: types.Square, occupied: Bitboard) Bitboard {
-        return (bb.pawnAttacksBySquare(types.Color.black, sq) & self.piecesByColorAndType(types.Color.white, types.PieceType.pawn))
-             | (bb.pawnAttacksBySquare(types.Color.white, sq) & self.piecesByColorAndType(types.Color.black, types.PieceType.pawn))
-             | (bb.pseudoAttacksBB(types.PieceType.knight, sq) & self.piecesByType(types.PieceType.knight))
-             | (bb.attacksBB(types.PieceType.rook, sq, occupied) & self.piecesByTwoTypes(types.PieceType.rook, types.PieceType.queen))
-             | (bb.attacksBB(types.PieceType.bishop, sq, occupied) & self.piecesByTwoTypes(types.PieceType.bishop, types.PieceType.queen))
-             | (bb.pseudoAttacksBB(types.PieceType.king, sq) & self.piecesByType(types.PieceType.king));
+        return (bb.pawnAttacksBySquare(.black, sq) & self.piecesByColorAndType(.white, .pawn))
+             | (bb.pawnAttacksBySquare(.white, sq) & self.piecesByColorAndType(.black, .pawn))
+             | (bb.pseudoAttacksBB(.knight, sq) & self.piecesByType(.knight))
+             | (bb.attacksBB(.rook, sq, occupied) & self.piecesByTwoTypes(.rook, .queen))
+             | (bb.attacksBB(.bishop, sq, occupied) & self.piecesByTwoTypes(.bishop, .queen))
+             | (bb.pseudoAttacksBB(.king, sq) & self.piecesByType(.king));
     }
 
     pub inline fn attacksBy(self: @This(), comptime piece_type: types.PieceType, color: types.Color) Bitboard {
@@ -362,7 +362,7 @@ pub const Position = struct {
         self.by_color_bb[@enumToInt(piece.colorOf())] ^= fromTo;
         self.board[@enumToInt(from)] = types.Piece.no_piece;
         self.board[@enumToInt(to)] = piece;
-        self.psq = self.psq.sub(psqt.psq[@enumToInt(piece)][@enumToInt(to)]).sub(psqt.psq[@enumToInt(piece)][@enumToInt(from)]);
+        self.psq = self.psq.add(psqt.psq[@enumToInt(piece)][@enumToInt(to)]).sub(psqt.psq[@enumToInt(piece)][@enumToInt(from)]);
     }
 
     pub inline fn doMoveWithoutCheck(self: *@This(), m: move.Move, new_state_info: *StateInfo) void {
@@ -398,24 +398,24 @@ pub const Position = struct {
         var to = m.to;
 
         assert(self.movedPiece(m).colorOf() == us);
-        assert(self.pieceOn(self.square(types.PieceType.king, us)) == types.makePiece(us, types.PieceType.king));
+        assert(self.pieceOn(self.square(.king, us)) == types.makePiece(us, .king));
 
-        if (m.move_type == move.MoveType.en_passant) {
-            const king_square = self.square(types.PieceType.king, us);
+        if (m.move_type == .en_passant) {
+            const king_square = self.square(.king, us);
             const cap_square = to.subDirection(types.pawnPush(us));
             const occupied = (self.pieces() ^ bb.squareBB(from) ^ bb.squareBB(cap_square)) | bb.squareBB(to);
 
             assert(to == self.enPassant().?);
-            assert(self.movedPiece(m) == types.makePiece(us, types.PieceType.pawn));
-            assert(self.pieceOn(cap_square) == types.makePiece(us.flip(), types.PieceType.pawn));
-            assert(self.pieceOn(to) == types.Piece.no_piece);
+            assert(self.movedPiece(m) == types.makePiece(us, .pawn));
+            assert(self.pieceOn(cap_square) == types.makePiece(us.flip(), .pawn));
+            assert(self.pieceOn(to) == .no_piece);
 
-            return (bb.attacksBB(types.PieceType.rook, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), types.PieceType.queen, types.PieceType.rook)) == 0
-                and (bb.attacksBB(types.PieceType.bishop, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), types.PieceType.queen, types.PieceType.bishop)) == 0;
+            return (bb.attacksBB(.rook, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), .queen, .rook)) == 0
+                and (bb.attacksBB(.bishop, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), .queen, .bishop)) == 0;
         }
 
-        if (m.move_type == move.MoveType.castling) {
-            to = types.relativeSquare(us, if (@enumToInt(to) > @enumToInt(from)) types.Square.g1 else types.Square.c1);
+        if (m.move_type == .castling) {
+            to = types.relativeSquare(us, if (@enumToInt(to) > @enumToInt(from)) .g1 else .c1);
             const step = if (@enumToInt(to) > @enumToInt(from)) types.Direction.west else types.Direction.east;
 
             var s = to;
@@ -428,11 +428,11 @@ pub const Position = struct {
             return !self.is_chess_960 or (self.blockersForKing(us) & bb.squareBB(m.to)) == 0;
         }
 
-        if (self.pieceOn(from).typeOf() == types.PieceType.king) {
+        if (self.pieceOn(from).typeOf() == .king) {
             return (self.attackersTo(to, self.pieces() ^ bb.squareBB(from)) & self.piecesByColor(us.flip())) == 0;
         }
 
-        return (self.blockersForKing(us) & bb.squareBB(from)) == 0 or bb.aligned(from, to, self.square(types.PieceType.king, us));
+        return (self.blockersForKing(us) & bb.squareBB(from)) == 0 or bb.aligned(from, to, self.square(.king, us));
     }
 
     pub fn pseudoLegal(self: @This(), m: move.Move) bool {
@@ -555,7 +555,7 @@ pub const Position = struct {
         var captured = if (m.move_type == .en_passant) types.makePiece(them, .pawn) else self.pieceOn(to);
 
         assert(piece.colorOf() == us);
-        assert(captured == .no_piece or captured.colorOf() == (if (m.move_type == .castling) them else us));
+        assert(captured == .no_piece or captured.colorOf() == (if (m.move_type != .castling) them else us));
         assert(captured.typeOf() != types.PieceType.king);
 
         if (m.move_type == move.MoveType.castling) {
@@ -627,7 +627,7 @@ pub const Position = struct {
             if ((@enumToInt(to) ^ @enumToInt(from)) == 16
                 and (bb.pawnAttacksBySquare(us, to.subDirection(types.pawnPush(us))) & self.piecesByColorAndType(them, types.PieceType.pawn)) != 0) {
                 self.state_info.en_passant = to.subDirection(types.pawnPush(us));
-                k ^= hashkey.hash_keys.en_passant[@enumToInt(self.state_info.en_passant.?)];
+                k ^= hashkey.hash_keys.en_passant[self.state_info.en_passant.?.file()];
             } else if (m.move_type == move.MoveType.promotion) {
                 const promotion = types.makePiece(us, m.promotionToPiece());
 
@@ -680,7 +680,7 @@ pub const Position = struct {
 
         const us = self.side_to_move;
         const from = m.from;
-        const to = m.to;
+        var to = m.to;
         var piece = self.pieceOn(to);
 
         assert(self.empty(from) or m.move_type == .castling);
@@ -709,20 +709,20 @@ pub const Position = struct {
                     cap_square = cap_square.subDirection(types.pawnPush(us));
 
                     assert(piece.typeOf() == .pawn);
-                    assert(to == self.state_info.en_passant.?);
+                    assert(to == self.state_info.previous.?.en_passant.?);
                     assert(types.relativeRankBySquare(us, to) == .rank6);
                     assert(self.pieceOn(cap_square) == .no_piece);
-                    assert(self.state_info.captured_piece == types.makePiece(us.flip(), .pawn()));
+                    assert(self.state_info.captured_piece == types.makePiece(us.flip(), .pawn));
                 }
 
                 self.putPiece(self.state_info.captured_piece, cap_square);
             }
         }
 
-        self.state_info = self.state_info.previous;
+        self.state_info = self.state_info.previous.?;
         self.game_ply -= 1;
 
-        assert(self.popIsOk());
+        assert(self.posIsOk());
     }
 
     pub fn doCastling(self: *@This(), comptime do: bool, us: types.Color, from: types.Square, to: *types.Square, rfrom: *types.Square, rto: *types.Square) void {
@@ -976,7 +976,7 @@ pub const Position = struct {
 
         if (self.piece_count[@enumToInt(types.Piece.white_king)] != 1
             or self.piece_count[@enumToInt(types.Piece.black_king)] != 1
-            or (self.attackersToBySquare(self.square(types.PieceType.king, self.side_to_move.flip())) & self.piecesByColor(self.side_to_move)) != 0) {
+            or (self.attackersToBySquare(self.square(.king, self.side_to_move.flip())) & self.piecesByColor(self.side_to_move)) != 0) {
             std.debug.print("posIsOk: Kings\n", .{});
             return false;
         }
@@ -984,7 +984,7 @@ pub const Position = struct {
         if (((self.piecesByType(types.PieceType.pawn) & (bb.rank_1_bb | bb.rank_8_bb)) != 0)
             or self.piece_count[@enumToInt(types.Piece.white_pawn)] > 8
             or self.piece_count[@enumToInt(types.Piece.black_pawn)] > 8) {
-            std.debug.print("posIsOk: pawns\n", .{});
+            std.debug.print("posIsOk: Pawns\n", .{});
             return false;
         }
 
@@ -992,7 +992,7 @@ pub const Position = struct {
             or (self.piecesByColor(types.Color.white) | self.piecesByColor(types.Color.black)) != self.pieces()
             or @popCount(Bitboard, self.piecesByColor(types.Color.white)) > 16
             or @popCount(Bitboard, self.piecesByColor(types.Color.black)) > 16) {
-            std.debug.print("posIsOk: bitboards\n", .{});
+            std.debug.print("posIsOk: Bitboards\n", .{});
             return false;
         }
 
@@ -1001,7 +1001,7 @@ pub const Position = struct {
             var p2 = @enumToInt(types.PieceType.pawn);
             while (p2 <= @enumToInt(types.PieceType.king)) : (p2 += 1) {
                 if (p1 != p2 and (self.piecesByType(@intToEnum(types.PieceType, p1)) & self.piecesByType(@intToEnum(types.PieceType, p2))) != 0) {
-                    std.debug.print("posIsOk: bitboards\n", .{});
+                    std.debug.print("posIsOk: Bitboards\n", .{});
                     return false;
                 }
             }
@@ -1012,7 +1012,7 @@ pub const Position = struct {
         for (types.pieces_table) |piece| {
             if (self.piece_count[@enumToInt(piece)] != @popCount(Bitboard, self.piecesByColorAndType(piece.colorOf(), piece.typeOf()))
                 or self.piece_count[@enumToInt(piece)] != std.mem.count(types.Piece, self.board[0..], ([_]types.Piece{piece})[0..])) {
-                std.debug.print("posIsOk: pieces\n", .{});
+                std.debug.print("posIsOk: Pieces\n", .{});
                 return false;
             }
         }
@@ -1027,7 +1027,7 @@ pub const Position = struct {
                 if (self.pieceOn(self.castling_rook_square[@enumToInt(cr)]) != types.makePiece(color, types.PieceType.rook)
                     or self.castling_rights_mask[@enumToInt(self.castling_rook_square[@enumToInt(cr)])] != @enumToInt(cr)
                     or (self.castling_rights_mask[@enumToInt(self.square(types.PieceType.king, color))] & @enumToInt(cr)) != @enumToInt(cr)) {
-                    std.debug.print("posIsOk: castling\n", .{});
+                    std.debug.print("posIsOk: Castling\n", .{});
                     return false;
                 }
             }
@@ -1207,7 +1207,7 @@ pub const Position = struct {
         const kto = types.relativeSquare(color, if (cr.hasCastlingRights(types.CastlingRights.king_side)) types.Square.g1 else types.Square.c1);
         const rto = types.relativeSquare(color, if (cr.hasCastlingRights(types.CastlingRights.king_side)) types.Square.f1 else types.Square.d1);
 
-        self.castling_path[@enumToInt(cr)] = (bb.betweenBB(rfrom, rto) | bb.betweenBB(kfrom, kto)) & ~(bb.squareBB(kfrom) | bb.squareBB(kto));
+        self.castling_path[@enumToInt(cr)] = (bb.betweenBB(rfrom, rto) | bb.betweenBB(kfrom, kto)) & ~(bb.squareBB(kfrom) | bb.squareBB(rfrom));
     }
 
     fn setState(self: @This(), state_info: *StateInfo) void {
