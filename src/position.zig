@@ -8,6 +8,7 @@ const Bitboard = bb.Bitboard;
 const hashkey = @import("hashkey.zig");
 const Key = hashkey.Key;
 const move = @import("move.zig");
+const movegen = @import("movegen.zig");
 const MoveType = @import("move.zig").MoveType;
 
 const piece_to_char = [_]u8{ ' ', 'P', 'N', 'B', 'R', 'Q', 'K', ' ', ' ', 'p', 'n', 'b', 'r', 'q', 'k' };
@@ -215,9 +216,9 @@ pub const Position = struct {
     }
 
     pub inline fn castlingImpeded(self: @This(), cr: types.CastlingRights) bool {
-        assert(cr == types.CastlingRights.white_king_side_castle or cr == types.CastlingRights.white_queen_side_castle or cr == types.CastlingRights.black_king_side_castle or cr == types.CastlingRights.black_king_side_castle);
+        assert(cr == .white_king_side_castle or cr == .white_queen_side_castle or cr == .black_king_side_castle or cr == .black_queen_side_castle);
 
-        return self.pieces() & self.castling_path[@enumToInt(cr)];
+        return (self.pieces() & self.castling_path[@enumToInt(cr)]) != 0;
     }
 
     pub inline fn castlingRookSquare(self: @This(), cr: types.CastlingRights) types.Square {
@@ -409,8 +410,8 @@ pub const Position = struct {
             assert(self.pieceOn(cap_square) == types.makePiece(us.flip(), types.PieceType.pawn));
             assert(self.pieceOn(to) == types.Piece.no_piece);
 
-            return !(bb.attacksBB(types.PieceType.rook, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), types.PieceType.queen, types.PieceType.rook))
-                and !(bb.attacksBB(types.PieceType.bishop, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), types.PieceType.queen, types.PieceType.bishop));
+            return (bb.attacksBB(types.PieceType.rook, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), types.PieceType.queen, types.PieceType.rook)) == 0
+                and (bb.attacksBB(types.PieceType.bishop, king_square, occupied) & self.piecesByColorAndTwoTypes(us.flip(), types.PieceType.queen, types.PieceType.bishop)) == 0;
         }
 
         if (m.move_type == move.MoveType.castling) {
@@ -424,7 +425,7 @@ pub const Position = struct {
                 }
             }
 
-            return !self.is_chess_960 or !(self.blockersForKing(us) & bb.squareBB(m.to));
+            return !self.is_chess_960 or (self.blockersForKing(us) & bb.squareBB(m.to)) == 0;
         }
 
         if (self.pieceOn(from).typeOf() == types.PieceType.king) {
@@ -441,8 +442,15 @@ pub const Position = struct {
         const piece = self.movedPiece(m);
 
         if (m.move_type != move.MoveType.normal) {
-            // TODO movelist stuff
-            // return if (self.checkers() != 0) 
+            if (self.checkers()) {
+                var ml = movegen.MoveList(.evasions);
+                movegen.generate(.evasions, self, &ml);
+                return std.mem.indexOf(move.Move, ml.moves, ([_]move.Move{m})[0..]) != null;
+            } else {
+                var ml = movegen.MoveList(.non_evasions);
+                movegen.generate(.non_evasions, self, &ml);
+                return std.mem.indexOf(move.Move, ml.moves, ([_]move.Move{m})[0..]) != null;
+            }
         }
 
         if (m.promotion != 0) {
@@ -886,9 +894,15 @@ pub const Position = struct {
     }
 
     pub fn isDraw(self: @This(), ply: i32) bool {
-        // TODO movelist stuff
-        if (self.state_info.rule_50 > 99 and (!self.checkers())) {
-            return true;
+        if (self.state_info.rule_50 > 99) {
+            if (!self.checkers()) {
+                return true;
+            }
+            var ml = movegen.MoveList(.legal);
+            movegen.generate(.legal, self, &ml);
+            if (ml.current != 0) {
+                return true;
+            }
         }
 
         return self.state_info.repitition != 0 and self.state_info.repitition < ply;

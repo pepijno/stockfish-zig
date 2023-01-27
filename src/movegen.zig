@@ -28,227 +28,239 @@ pub const MoveGenType = enum {
     legal,
 };
 
-pub fn MoveList(comptime move_gen_type: MoveGenType) type {
-    return struct {
-        moves: [MAX_MOVES]ExtMove = undefined,
-        current: usize = 0,
+pub const MoveList = struct {
+    moves: [MAX_MOVES]ExtMove = undefined,
+    current: usize = 0,
 
-        pub fn print(self: @This()) void {
-            _ = move_gen_type;
-            std.debug.print("Size: {}\n", .{self.moves.items.len});
-            var i = 0;
-            while (i < self.current) : (i += 1) {
-                const extMove = self.moves[i];
-                std.debug.print("{{ move: {}, value: {} }}\n", .{ extMove.move, extMove.value });
+    pub fn print(self: @This()) void {
+        std.debug.print("Size: {}\n", .{self.moves.len});
+        var i: usize = 0;
+        while (i < self.current) : (i += 1) {
+            const extMove = self.moves[i];
+            std.debug.print("({}): {{ move: {}, value: {} }}\n", .{ i, extMove.move, extMove.value });
+        }
+    }
+
+    pub fn addMove(self: *@This(), m: move.Move) void {
+        self.moves[self.current] = .{
+            .move = m,
+            .value = 0,
+        };
+        self.current += 1;
+    }
+
+    pub fn byIndex(self: @This(), index: usize) ExtMove {
+        return self.moves[index];
+    }
+
+    pub fn generate(self: *@This(), comptime move_gen_type: MoveGenType, position: Position) void {
+        if (move_gen_type == .legal) {
+            const us = position.side_to_move;
+            const pinned = position.blockersForKing(us) & position.piecesByColor(us);
+            const king_square = position.square(.king, us);
+
+            var cur = self.current;
+
+            if (position.checkers() != 0) {
+                self.generate(.evasions, position);
+            } else {
+                self.generate(.non_evasions, position);
             }
-        }
 
-        pub fn addMove(self: *@This(), m: move.Move) void {
-            self.moves[self.current] = m;
-            self.current += 1;
-        }
-    };
-}
+            while (cur != self.current) {
+                const m = self.byIndex(cur);
+                if (((pinned != 0 and (pinned & bb.squareBB(m.move.from)) != 0) or m.move.from == king_square or m.move.move_type == .en_passant) and !position.legal(m.move)) {
+                    std.mem.swap(ExtMove, &self.moves[cur], &self.moves[self.current - 1]);
+                    self.current -= 1;
+                } else {
+                    cur += 1;
+                }
+            }
 
-pub fn generate(comptime move_gen_type: MoveGenType, position: Position, move_list: *MoveList) void {
-    if (move_gen_type == MoveGenType.legal) {
-        // TODO
-        // const us = position.colorToMove();
-        // const pinned = position.blockersForKing(us) & position.piecesByColor(us);
-        // const king_square = position.square(PieceType.king, us);
-        //
-        // var cur: *MoveList = move_list;
-        //
-        //
-        //
-    } else {
-        assert((move_gen_type == MoveGenType.evasions) == (position.checkers() != 0));
-
-        const us = position.sideToMove();
-
-        if (us == Color.white) {
-            generateAll(move_gen_type, Color.white, position, move_list);
         } else {
-            generateAll(move_gen_type, Color.black, position, move_list);
-        }
-    }
-}
+            assert((move_gen_type == .evasions) == (position.checkers() != 0));
 
-fn makePromotions(comptime gen_type: MoveGenType, comptime direction: types.Direction, move_list: *MoveList, to: Square) void {
-    _ = direction;
-    _ = move_list;
-    _ = to;
-    if (gen_type == MoveGenType.captures or gen_type == MoveGenType.evasions or gen_type == MoveGenType.non_evasions) {
-        move_list.addMove(Move.promotionMove(to.subDirection(direction), to, PieceType.queen));
-    }
+            const us = position.sideToMove();
 
-    if (gen_type == MoveGenType.quiets or gen_type == MoveGenType.evasions or gen_type == MoveGenType.non_evasions) {
-        move_list.addMove(Move.promotionMove(to.subDirection(direction), to, PieceType.rook));
-        move_list.addMove(Move.promotionMove(to.subDirection(direction), to, PieceType.bishop));
-        move_list.addMove(Move.promotionMove(to.subDirection(direction), to, PieceType.knight));
-    }
-}
-
-fn generatePawnMoves(comptime move_gen_type: MoveGenType, comptime us: Color, position: Position, move_list: *MoveList, target: Bitboard) void {
-    // zig fmt: off
-    const them: Color           = comptime us.flip();
-    const t_rank_7_bb: Bitboard = comptime if (us == Color.white) bb.rank_7_bb else bb.rank_2_bb;
-    const t_rank_2_bb: Bitboard = comptime if (us == Color.white) bb.rank_3_bb else bb.rank_6_bb;
-    const up: Direction         = comptime types.pawnPush(us);
-    const up_right: Direction   = comptime if (us == Color.white) Direction.north_east else Direction.south_west;
-    const up_left: Direction    = comptime if (us == Color.white) Direction.north_west else Direction.south_east;
-
-    const empty_squares: Bitboard = ~position.pieces();
-    const enemies: Bitboard       = if (move_gen_type == MoveGenType.evasions) position.checkers() else position.piecesByColor(them);
-
-    const pawns_on_7: Bitboard     = position.pieces(us, PieceType.pawn) &  t_rank_7_bb;
-    const pawns_not_on_7: Bitboard = position.pieces(us, PieceType.pawn) & ~t_rank_7_bb;
-    // zig fmt: on
-
-    move_list.moves.clearAndFree();
-
-    if (move_gen_type != MoveGenType.captures) {
-        var b1: Bitboard = bb.shift(pawns_not_on_7, up) & empty_squares;
-        var b2: Bitboard = bb.shift((b1 & t_rank_2_bb), up) & empty_squares;
-
-        if (move_gen_type == MoveGenType.evasions) {
-            b1 &= target;
-            b2 &= target;
-        }
-
-        if (move_gen_type == MoveGenType.quiet_checks) {
-            const king_square = position.square(PieceType.king, them);
-
-            // TODO
-            const dc_candidate_pawns: Bitboard = position.blockersForKing(king_square) & ~bb.squareFileBB(king_square);
-            b1 &= bb.pawnAttacksBySquare(them, king_square) | bb.shift(up, dc_candidate_pawns);
-            b2 &= bb.pawnAttacksBySquare(them, king_square) | bb.shift(up, bb.shift(up, dc_candidate_pawns));
-        }
-
-        while (b1 != 0) {
-            const sq: Square = bb.popLsb(b1);
-            move_list.addMove(Move.normalMove(sq.subDirection(up), sq));
-        }
-
-        while (b2 != 0) {
-            const sq: Square = bb.popLsb(b2);
-            move_list.addMove(Move.normalMove(sq.subDirection(up).subDirection(up), sq));
+            if (us == Color.white) {
+                self.generateAll(move_gen_type, .white, position);
+            } else {
+                self.generateAll(move_gen_type, .black, position);
+            }
         }
     }
 
-    if (pawns_on_7 != 0) {
-        var b1: Bitboard = bb.shift(pawns_on_7, up_right) & enemies;
-        var b2: Bitboard = bb.shift(pawns_on_7, up_left) & enemies;
-        var b3: Bitboard = bb.shift(pawns_on_7, up) & empty_squares;
-
-        while (b1 != 0) {
-            makePromotions(move_gen_type, up_right, bb.popLsb(b1), move_list);
+    fn makePromotions(self: *@This(), comptime gen_type: MoveGenType, comptime direction: types.Direction, to: Square) void {
+        if (gen_type == .captures or gen_type == .evasions or gen_type == .non_evasions) {
+            self.addMove(Move.promotionMove(to.subDirection(direction), to, .queen));
         }
 
-        while (b2 != 0) {
-            makePromotions(move_gen_type, up_left, bb.popLsb(b2), move_list);
-        }
-
-        while (b3 != 0) {
-            makePromotions(move_gen_type, up, bb.popLsb(b3), move_list);
+        if (gen_type == .quiets or gen_type == .evasions or gen_type == .non_evasions) {
+            self.addMove(Move.promotionMove(to.subDirection(direction), to, .rook));
+            self.addMove(Move.promotionMove(to.subDirection(direction), to, .bishop));
+            self.addMove(Move.promotionMove(to.subDirection(direction), to, .knight));
         }
     }
 
-    if (move_gen_type == MoveGenType.captures or move_gen_type == MoveGenType.evasions or move_gen_type == MoveGenType.non_evasions) {
-        var b1 = bb.shift(pawns_not_on_7, up_right) & enemies;
-        var b2 = bb.shift(pawns_not_on_7, up_left) & enemies;
+    fn generatePawnMoves(self: *@This(), comptime move_gen_type: MoveGenType, comptime us: Color, position: Position, target: Bitboard) void {
+        // zig fmt: off
+        const them: Color           = comptime us.flip();
+        const t_rank_7_bb: Bitboard = comptime if (us == .white) bb.rank_7_bb else bb.rank_2_bb;
+        const t_rank_2_bb: Bitboard = comptime if (us == .white) bb.rank_3_bb else bb.rank_6_bb;
+        const up: Direction         = comptime types.pawnPush(us);
+        const up_right: Direction   = comptime if (us == .white) .north_east else .south_west;
+        const up_left: Direction    = comptime if (us == .white) .north_west else .south_east;
 
-        while (b1 != 0) {
-            const sq = bb.popLsb(b1);
-            move_list.addMove(Move.normalMove(sq.subDirection(up_right), sq));
-        }
+        const empty_squares: Bitboard = ~position.pieces();
+        const enemies: Bitboard       = if (move_gen_type == .evasions) position.checkers() else position.piecesByColor(them);
 
-        while (b2 != 0) {
-            const sq = bb.popLsb(b2);
-            move_list.addMove(Move.normalMove(sq.subDirection(up_left), sq));
-        }
+        const pawns_on_7: Bitboard     = position.piecesByColorAndType(us, .pawn) &  t_rank_7_bb;
+        const pawns_not_on_7: Bitboard = position.piecesByColorAndType(us, .pawn) & ~t_rank_7_bb;
+        // zig fmt: on
 
-        if (position.en_passant) |ep| {
-            assert(if (us == Color.white) ep.rank() == 5 else ep.rank() == 2);
+        self.current = 0;
 
-            if (move_gen_type == MoveGenType.evasions and (target & (bb.squareBB(ep.addDirection(up)))) != 0) {
-                return;
+        if (move_gen_type != .captures) {
+            var b1: Bitboard = bb.shift(up, pawns_not_on_7) & empty_squares;
+            var b2: Bitboard = bb.shift(up, (b1 & t_rank_2_bb)) & empty_squares;
+
+            if (move_gen_type == .evasions) {
+                b1 &= target;
+                b2 &= target;
             }
 
-            b1 = pawns_not_on_7 & bb.pawnAttacksBySquare(them, ep);
+            if (move_gen_type == .quiet_checks) {
+                const king_square = position.square(.king, them);
+                const dc_candidate_pawns: Bitboard = position.blockersForKing(king_square) & ~bb.squareFileBB(king_square);
+                b1 &= bb.pawnAttacksBySquare(them, king_square) | bb.shift(up, dc_candidate_pawns);
+                b2 &= bb.pawnAttacksBySquare(them, king_square) | bb.shift(up, bb.shift(up, dc_candidate_pawns));
+            }
 
             while (b1 != 0) {
-                const sq = bb.popLsb(b1);
-                move_list.addMove(Move.enPassantMove(sq, ep));
+                const sq: Square = bb.popLsb(&b1);
+                self.addMove(Move.normalMove(sq.subDirection(up), sq));
+            }
+
+            while (b2 != 0) {
+                const sq: Square = bb.popLsb(&b2);
+                self.addMove(Move.normalMove(sq.subDirection(up).subDirection(up), sq));
             }
         }
-    }
-}
 
-fn generateMoves(comptime piece_type: PieceType, comptime side: Color, comptime checks: bool, position: Position, move_list: *MoveList, target: Bitboard) void {
-    comptime {
-        assert(piece_type != PieceType.king and piece_type != PieceType.pawn);
-    }
+        if (pawns_on_7 != 0) {
+            var b1: Bitboard = bb.shift(up_right, pawns_on_7) & enemies;
+            var b2: Bitboard = bb.shift(up_left, pawns_on_7) & enemies;
+            var b3: Bitboard = bb.shift(up, pawns_on_7) & empty_squares;
 
-    var bitboard: Bitboard = position.pieces(side, piece_type);
+            while (b1 != 0) {
+                self.makePromotions(move_gen_type, up_right, bb.popLsb(&b1));
+            }
 
-    while (bitboard != 0) {
-        const from = bb.popLsb(bitboard);
+            while (b2 != 0) {
+                self.makePromotions(move_gen_type, up_left, bb.popLsb(&b2));
+            }
 
-        const b: Bitboard = bb.attacksBB(piece_type, from, position.allPieces()) & target;
-
-        if (checks and (piece_type == PieceType.queen or (position.blockersForKing(side.flip()) & bb.squareBB(from)) == 0)) {
-            b &= position.checkSquare(piece_type);
+            while (b3 != 0) {
+                self.makePromotions(move_gen_type, up, bb.popLsb(&b3));
+            }
         }
 
-        while (b != 0) {
-            move_list.addMove(Move.normalMove(from, bb.popLsb(b)));
-        }
-    }
-}
+        if (move_gen_type == .captures or move_gen_type == .evasions or move_gen_type == .non_evasions) {
+            var b1 = bb.shift(up_right, pawns_not_on_7) & enemies;
+            var b2 = bb.shift(up_left, pawns_not_on_7) & enemies;
 
-fn generateAll(comptime move_gen_type: MoveGenType, comptime us: Color, position: Position, move_list: *MoveList) void {
-    comptime {
-        assert(move_gen_type != MoveGenType.legal);
-    }
+            while (b1 != 0) {
+                const sq = bb.popLsb(&b1);
+                self.addMove(Move.normalMove(sq.subDirection(up_right), sq));
+            }
 
-    const checks = comptime move_gen_type == MoveGenType.quiet_checks;
-    const king_square = position.square(PieceType.king, us);
-    var target: Bitboard = 0;
+            while (b2 != 0) {
+                const sq = bb.popLsb(&b2);
+                self.addMove(Move.normalMove(sq.subDirection(up_left), sq));
+            }
 
-    if (move_gen_type != MoveGenType.evasions or !bb.moreThanOne(position.checkers())) {
-        target = switch (move_gen_type) {
-            MoveGenType.evasions => bb.betweenBB(king_square, @ctz(Bitboard, position.checkers())),
-            MoveGenType.non_evasions => ~position.piecesByColor(us),
-            MoveGenType.captures => position.piecesByColor(us.flip()),
-            else => ~position.allPieces(),
-        };
+            if (position.state_info.en_passant) |ep| {
+                assert(if (us == .white) ep.rank() == 5 else ep.rank() == 2);
 
-        generatePawnMoves(move_gen_type, us, position, move_list, target);
-        generateMoves(PieceType.knight, us, checks, position, move_list, target);
-        generateMoves(PieceType.bishop, us, checks, position, move_list, target);
-        generateMoves(PieceType.roo, us, checks, position, move_list, target);
-        generateMoves(PieceType.queen, us, checks, position, move_list, target);
-    }
+                if (move_gen_type == .evasions and (target & (bb.squareBB(ep.addDirection(up)))) != 0) {
+                    return;
+                }
 
-    if (!checks or position.blockersForKing(us.flip()) & bb.squareBB(king_square) != 0) {
-        var b = bb.attacksBB(PieceType.king, king_square) & (if (move_gen_type == MoveGenType.evasions) ~position.piecesByColor(us) else target);
-        if (checks) {
-            b &= ~bb.attacksBB(PieceType.queen, position.square(PieceType.king, us.flip()));
-        }
+                b1 = pawns_not_on_7 & bb.pawnAttacksBySquare(them, ep);
 
-        while (b != 0) {
-            move_list.addMove(Move.normalMove(king_square, bb.popLsb(b)));
-        }
-
-        if ((move_gen_type == MoveGenType.quiets or move_gen_type == MoveGenType.non_evasions) and position.colorCanCastle(us)) {
-            const rights = if (us == Color.white) [_]types.CastlingRights{ types.CastlingRights.white_queen_side_castle, types.CastlingRights.white_king_side_castle }
-                        else [_]types.CastlingRights{ types.CastlingRights.black_queen_side_castle, types.CastlingRights.black_king_side_castle };
-            for (rights) |cr| {
-                if (!position.castlingImpeded(cr) and position.canCastle(cr)) {
-                    move_list.addMove(Move.castlingMove(king_square, position.castlingRookSquare(cr)));
+                while (b1 != 0) {
+                    const sq = bb.popLsb(&b1);
+                    self.addMove(Move.enPassantMove(sq, ep));
                 }
             }
         }
     }
-}
+
+    fn generateMoves(self: *@This(), comptime piece_type: PieceType, comptime side: Color, comptime checks: bool, position: Position, target: Bitboard) void {
+        comptime {
+            assert(piece_type != .king and piece_type != .pawn);
+        }
+
+        var bitboard: Bitboard = position.piecesByColorAndType(side, piece_type);
+
+        while (bitboard != 0) {
+            const from = bb.popLsb(&bitboard);
+
+            var b: Bitboard = bb.attacksBB(piece_type, from, position.pieces()) & target;
+
+            if (checks and (piece_type == .queen or (position.blockersForKing(side.flip()) & bb.squareBB(from)) == 0)) {
+                b &= position.checkSquare(piece_type);
+            }
+
+            while (b != 0) {
+                self.addMove(Move.normalMove(from, bb.popLsb(&b)));
+            }
+        }
+    }
+
+    fn generateAll(self: *@This(), comptime move_gen_type: MoveGenType, comptime us: Color, position: Position) void {
+        comptime {
+            assert(move_gen_type != MoveGenType.legal);
+        }
+
+        const checks = comptime move_gen_type == .quiet_checks;
+        const king_square = position.square(.king, us);
+        var target: Bitboard = 0;
+
+        if (move_gen_type != .evasions or !bb.moreThanOne(position.checkers())) {
+            target = switch (move_gen_type) {
+                .evasions => bb.betweenBB(king_square, @intToEnum(Square, @ctz(Bitboard, position.checkers()))),
+                .non_evasions => ~position.piecesByColor(us),
+                .captures => position.piecesByColor(us.flip()),
+                else => ~position.allPieces(),
+            };
+
+            self.generatePawnMoves(move_gen_type, us, position, target);
+            self.generateMoves(.knight, us, checks, position, target);
+            self.generateMoves(.bishop, us, checks, position, target);
+            self.generateMoves(.rook, us, checks, position, target);
+            self.generateMoves(.queen, us, checks, position, target);
+        }
+
+        if (!checks or (position.blockersForKing(us.flip()) & bb.squareBB(king_square)) != 0) {
+            var b = bb.pseudoAttacksBB(.king, king_square) & (if (move_gen_type == .evasions) ~position.piecesByColor(us) else target);
+            if (checks) {
+                b &= ~bb.pseudoAttacksBB(.queen, position.square(.king, us.flip()));
+            }
+
+            while (b != 0) {
+                self.addMove(Move.normalMove(king_square, bb.popLsb(&b)));
+            }
+
+            if ((move_gen_type == .quiets or move_gen_type == .non_evasions) and position.canCastle(if (us == .white) .white_castling else .black_castling)) {
+                const rights = if (us == .white) [_]types.CastlingRights{ .white_queen_side_castle, .white_king_side_castle }
+                            else [_]types.CastlingRights{ .black_queen_side_castle, .black_king_side_castle };
+                for (rights) |cr| {
+                    if (!position.castlingImpeded(cr) and position.canCastle(cr)) {
+                        self.addMove(Move.castlingMove(king_square, position.castlingRookSquare(cr)));
+                    }
+                }
+            }
+        }
+    }
+};

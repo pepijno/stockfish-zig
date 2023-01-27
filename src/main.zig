@@ -12,7 +12,7 @@ const psqt = @import("psqt.zig");
 const allocator = std.testing.allocator;
 
 // const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-const testFEN = "rnbqkbn1/4pppP/8/2pR4/1pPpP3/5N2/3P1PPp/RNBQKBN1 b Qq c3 1 2";
+const testFEN = "rnbqk2r/4pppP/8/2pR4/1pPpP3/5N2/3P1PPp/RNBQKBN1 b Qkq c3 1 2";
 
 pub fn main() anyerror!void {
     bitboard.init();
@@ -42,6 +42,7 @@ pub fn main() anyerror!void {
     };
 
     var new_state_info = state_info;
+    _ = new_state_info;
 
     var b: Position = Position.emptyBoard(&state_info);
     b.state_info = &state_info;
@@ -50,23 +51,12 @@ pub fn main() anyerror!void {
     try b.print(std.heap.page_allocator);
     b.set(testFEN, false, &state_info);
     try b.print(std.heap.page_allocator);
-    b.doMoveWithoutCheck(move.Move.normalMove(types.Square.d8, types.Square.a5), &new_state_info);
-    try b.print(std.heap.page_allocator);
+    // b.doMoveWithoutCheck(move.Move.normalMove(types.Square.d8, types.Square.a5), &new_state_info);
+    // try b.print(std.heap.page_allocator);
 
-    // var ml: movegen.MoveList = .{
-    //     .moves = std.ArrayList(movegen.ExtMove).init(allocator),
-    // };
-    // const m = move.Move.castlingMove(types.Square.a1, types.Square.a8);
-    // try ml.moves.append(.{
-    //     .move = m,
-    //     .value = 0,
-    // });
-    // ml.print();
-    //
-    // try movegen.generateMoves(types.PieceType.queen, types.Color.black, false, b, &ml, b.by_color_bb[@enumToInt(types.Color.White)]);
-    // ml.print();
-    //
-    // bitboard.pretty(b.by_type_bb[@enumToInt(types.PieceType.all_pieces)]);
+    var ml: movegen.MoveList = .{};
+    ml.generate(.legal, b);
+    ml.print();
 }
 
 // test "" {
