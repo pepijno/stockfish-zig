@@ -257,3 +257,18 @@ pub fn egValue(psq: Score) Value {
     const eg = Eg{ .u = u16(u32(psq + 0x8000) >> 16) };
     return eg.s;
 }
+
+pub inline fn mulHi64(a: u64, b: u64) u64 {
+    return @intCast(u64, (@as(u128, a) * @as(u128, b)) >> 64);
+}
+
+pub const Depth = i32;
+
+pub const Bound = enum(u4) {
+    bound_none = 0,
+    boune_upper = 1,
+    bound_lower = 2,
+    bound_exact = 3,
+};
+
+pub const depth_offset: i32 = -7;

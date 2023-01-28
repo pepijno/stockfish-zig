@@ -4,8 +4,7 @@ const position = @import("position.zig");
 const movegen = @import("movegen.zig");
 const move = @import("move.zig");
 const types = @import("types.zig");
-
-pub const Depth = i32;
+const Depth = types.Depth;
 
 pub fn perft(comptime root: bool, allocator: std.mem.Allocator, pos: *position.Position, depth: Depth) u64 {
     var out = std.io.getStdOut().writer();

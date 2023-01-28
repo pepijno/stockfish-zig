@@ -7,6 +7,7 @@ const StateInfo = position.StateInfo;
 const move = @import("move.zig");
 const movegen = @import("movegen.zig");
 const search = @import("search.zig");
+const tt = @import("tt.zig");
 
 const start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 // const test_fen = "rnbqk2r/4pppP/8/2pR4/1pPpP3/5N2/3P1PPp/RNBQKBN1 b Qkq c3 1 2";
@@ -14,7 +15,13 @@ const start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 // const test_fen = "8/PPPk4/8/8/8/8/4Kppp/8 b - - 0 1";
 
 pub fn main() anyerror!void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
     bitboard.init();
+    tt.tt.init(allocator);
 
     var state_info1: StateInfo = std.mem.zeroes(StateInfo);
     // var state_info2: StateInfo = std.mem.zeroes(StateInfo);
@@ -28,9 +35,9 @@ pub fn main() anyerror!void {
     // pos.doMoveWithoutCheck(move.Move.normalMove(.a7, .a6), &state_info3);
     // pos.doMoveWithoutCheck(move.Move.normalMove(.f1, .e2), &state_info4);
     // pos.doMoveWithoutCheck(move.Move.normalMove(.a6, .a5), &state_info5);
-    try pos.print(std.heap.page_allocator);
+    try pos.print(allocator);
 
-    const nodes: u64 = search.perft(true, std.heap.page_allocator, &pos, 6);
+    const nodes: u64 = search.perft(true, allocator, &pos, 6);
     var out = std.io.getStdOut().writer();
     var buffer = std.io.bufferedWriter(out);
     var buf_out = buffer.writer();
@@ -43,11 +50,3 @@ pub fn main() anyerror!void {
     // ml.generate(.legal, pos);
     // ml.print();
 }
-
-// test "" {
-//     _ = @import("header.zig");
-//     _ = @import("image-buffer.zig");
-//     _ = @import("color.zig");
-//     _ = @import("encoder.zig");
-//     _ = @import("decoder.zig");
-// }

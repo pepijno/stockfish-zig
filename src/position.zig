@@ -10,6 +10,7 @@ const Key = hashkey.Key;
 const move = @import("move.zig");
 const movegen = @import("movegen.zig");
 const MoveType = @import("move.zig").MoveType;
+const tt = @import("tt.zig");
 
 const piece_to_char = [_]u8{ ' ', 'P', 'N', 'B', 'R', 'Q', 'K', ' ', ' ', 'p', 'n', 'b', 'r', 'q', 'k' };
 
