@@ -16,6 +16,8 @@ pub const MoveType = enum(u2) {
 };
 
 pub const Move = packed struct {
+    pub const no_move = std.mem.zeroes(@This());
+
     from: Square,
     to: Square,
     promotion: u2,
@@ -70,15 +72,6 @@ pub const Move = packed struct {
             2 => PieceType.rook,
             3 => PieceType.queen,
         };
-    }
-
-    pub fn print(self: @This()) void {
-        std.debug.print("from: {}, to: {}, promotion: {}, move_type: {}\n", .{
-            self.from,
-            self.to,
-            self.promotionToPiece(),
-            self.move_type
-        });
     }
 
     pub fn toString(self: @This(), allocator: std.mem.Allocator) ![]const u8 {

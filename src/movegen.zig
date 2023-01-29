@@ -17,7 +17,7 @@ pub const ExtMove = struct {
     value: i32,
 };
 
-pub const MAX_MOVES: usize = 256;
+pub const max_moves: usize = 256;
 
 pub const MoveGenType = enum {
     captures,
@@ -29,7 +29,7 @@ pub const MoveGenType = enum {
 };
 
 pub const MoveList = struct {
-    moves: [MAX_MOVES]ExtMove = undefined,
+    moves: [max_moves]ExtMove = undefined,
     current: usize = 0,
 
     pub fn print(self: @This()) !void {
@@ -86,7 +86,7 @@ pub const MoveList = struct {
         } else {
             assert((move_gen_type == .evasions) == (position.checkers() != 0));
 
-            const us = position.sideToMove();
+            const us = position.side_to_move;
 
             if (us == Color.white) {
                 self.generateAll(move_gen_type, .white, position);

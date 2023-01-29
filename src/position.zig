@@ -143,10 +143,6 @@ pub const Position = struct {
         self.is_chess_960 = false;
     }
 
-    pub inline fn sideToMove(self: @This()) types.Color {
-        return self.side_to_move;
-    }
-
     pub inline fn pieceOn(self: @This(), sq: types.Square) types.Piece {
         return self.board[@enumToInt(sq)];
     }

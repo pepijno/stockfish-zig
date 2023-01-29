@@ -272,3 +272,4 @@ pub const Bound = enum(u4) {
 };
 
 pub const depth_offset: i32 = -7;
+pub const depth_qs_check: i32 = 0;
