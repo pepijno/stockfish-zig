@@ -37,16 +37,24 @@ pub const Square = enum(SquareType) {
         return @intCast(u6, @enumToInt(self) & 7);
     }
 
-    pub inline fn asKey(self: @This()) u6 {
-        return @enumToInt(self);
+    pub fn flip(self: @This()) @This() {
+        return @intToEnum(@This(), @enumToInt(self) ^ @enumToInt(Square.h1));
+    }
+
+    pub fn flipRank(self: @This()) @This() {
+        return @intToEnum(@This(), @enumToInt(self) ^ @enumToInt(Square.a8));
+    }
+
+    pub fn flipFile(self: @This()) @This() {
+        return @intToEnum(@This(), @enumToInt(self) ^ @enumToInt(Square.h1));
     }
 
     pub inline fn addDirection(self: @This(), direction: Direction) Square {
-        return @intToEnum(Square, @intCast(u6, @as(i8, @enumToInt(self)) + @enumToInt(direction)));
+        return @intToEnum(@This(), @intCast(u6, @as(i8, @enumToInt(self)) + @enumToInt(direction)));
     }
 
     pub inline fn subDirection(self: @This(), direction: Direction) Square {
-        return @intToEnum(Square, @intCast(u6, @as(i8, @enumToInt(self)) - @enumToInt(direction)));
+        return @intToEnum(@This(), @intCast(u6, @as(i8, @enumToInt(self)) - @enumToInt(direction)));
     }
 
     pub inline fn toString(self: @This(), allocator: std.mem.Allocator) ![]const u8 {
@@ -215,6 +223,10 @@ pub const Value = enum(i32) {
     pub fn sub(self: @This(), value: @This()) @This() {
         return @intToEnum(@This(), @enumToInt(self) - @enumToInt(value));
     }
+
+    pub fn mul(self: @This(), value: @This()) @This() {
+        return @intToEnum(@This(), @enumToInt(self) * @enumToInt(value));
+    }
 };
 
 pub const Phase = enum(u16) {
@@ -273,3 +285,11 @@ pub const Bound = enum(u4) {
 
 pub const depth_offset: i32 = -7;
 pub const depth_qs_check: i32 = 0;
+
+pub const ScaleFactor = enum(i32) {
+    scale_factor_draw = 0,
+    scale_factor_normal = 64,
+    scale_factor_max = 128,
+    scale_factor_none = 255,
+    _,
+};

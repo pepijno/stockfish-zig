@@ -74,7 +74,7 @@ pub const pawn_attacks = blk: {
 
 pub var between_bb: [types.n_squares][types.n_squares]Bitboard = undefined;
 pub var line_bb: [types.n_squares][types.n_squares]Bitboard = undefined;
-pub var pseude_attacks: [types.n_piece_types][types.n_squares]Bitboard = undefined;
+pub var pseudo_attacks: [types.n_piece_types][types.n_squares]Bitboard = undefined;
 
 const Magic = struct {
     mask: Bitboard,
@@ -176,9 +176,9 @@ pub inline fn betweenBB(square1: Square, square2: Square) Bitboard {
 
 pub inline fn forwardRanksBB(color: Color, square: Square) Bitboard {
     if (color == Color.white) {
-        return ~rank_1_bb << @intCast(u6, 8 * types.relativeRank(Color.white, square));
+        return ~rank_1_bb << @intCast(u6, 8 * @enumToInt(types.relativeRankBySquare(Color.white, square)));
     } else {
-        return ~rank_8_bb >> @intCast(u6, 8 * types.relativeRank(Color.black, square));
+        return ~rank_8_bb >> @intCast(u6, 8 * @enumToInt(types.relativeRankBySquare(Color.black, square)));
     }
 }
 
@@ -200,9 +200,9 @@ pub inline fn aligned(square1: Square, square2: Square, square3: Square) bool {
 
 pub inline fn distance(comptime T: type, x: Square, y: Square) u8 {
     if (T == types.File) {
-        return std.math.absInt(@as(i8, x.file()) - @as(i8, y.file())) catch unreachable;
+        return @intCast(u8, std.math.absInt(@as(i8, x.file()) - @as(i8, y.file())) catch unreachable);
     } else if (T == types.Rank) {
-        return std.math.absInt(@as(i8, x.rank()) - @as(i8, y.rank())) catch unreachable;
+        return @intCast(u8, std.math.absInt(@as(i8, x.rank()) - @as(i8, y.rank())) catch unreachable);
     } else if (T == Square) {
         return square_distance[@enumToInt(x)][@enumToInt(y)];
     } else {
@@ -220,7 +220,7 @@ pub inline fn rankEdgeDistance(rank: u8) u8 {
 
 pub inline fn pseudoAttacksBB(piece_type: PieceType, square: Square) Bitboard {
     assert(piece_type != types.PieceType.pawn);
-    return pseude_attacks[@enumToInt(piece_type)][@enumToInt(square)];
+    return pseudo_attacks[@enumToInt(piece_type)][@enumToInt(square)];
 }
 
 pub inline fn attacksBB(piece_type: PieceType, square: Square, occupied: Bitboard) Bitboard {
@@ -229,7 +229,7 @@ pub inline fn attacksBB(piece_type: PieceType, square: Square, occupied: Bitboar
         PieceType.bishop => bishop_magics[sq].attacks[bishop_magics[sq].index(occupied)],
         PieceType.rook => rook_magics[sq].attacks[rook_magics[sq].index(occupied)],
         PieceType.queen => attacksBB(PieceType.bishop, square, occupied) | attacksBB(PieceType.rook, square, occupied),
-        else => pseude_attacks[@enumToInt(piece_type)][sq],
+        else => pseudo_attacks[@enumToInt(piece_type)][sq],
     };
 }
 //
@@ -279,24 +279,24 @@ pub fn init() void {
     initMagics(PieceType.rook, rook_table[0..], rook_magics[0..]);
 
     for (std.enums.values(Square)) |square| {
-        pseude_attacks[@enumToInt(PieceType.king)][@enumToInt(square)] = 0;
+        pseudo_attacks[@enumToInt(PieceType.king)][@enumToInt(square)] = 0;
         for ([_]i8{ -9, -8, -7, -1, 1, 7, 8, 9 }) |step| {
-            pseude_attacks[@enumToInt(PieceType.king)][@enumToInt(square)] |= safeDestination(square, step);
+            pseudo_attacks[@enumToInt(PieceType.king)][@enumToInt(square)] |= safeDestination(square, step);
         }
 
-        pseude_attacks[@enumToInt(PieceType.knight)][@enumToInt(square)] = 0;
+        pseudo_attacks[@enumToInt(PieceType.knight)][@enumToInt(square)] = 0;
         for ([_]i8{ -17, -15, -10, -6, 6, 10, 15, 17 }) |step| {
-            pseude_attacks[@enumToInt(PieceType.knight)][@enumToInt(square)] |= safeDestination(square, step);
+            pseudo_attacks[@enumToInt(PieceType.knight)][@enumToInt(square)] |= safeDestination(square, step);
         }
 
-        pseude_attacks[@enumToInt(PieceType.bishop)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
-        pseude_attacks[@enumToInt(PieceType.rook)][@enumToInt(square)] = attacksBB(PieceType.rook, square, 0);
-        pseude_attacks[@enumToInt(PieceType.queen)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
-        pseude_attacks[@enumToInt(PieceType.queen)][@enumToInt(square)] |= attacksBB(PieceType.rook, square, 0);
+        pseudo_attacks[@enumToInt(PieceType.bishop)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
+        pseudo_attacks[@enumToInt(PieceType.rook)][@enumToInt(square)] = attacksBB(PieceType.rook, square, 0);
+        pseudo_attacks[@enumToInt(PieceType.queen)][@enumToInt(square)] = attacksBB(PieceType.bishop, square, 0);
+        pseudo_attacks[@enumToInt(PieceType.queen)][@enumToInt(square)] |= attacksBB(PieceType.rook, square, 0);
 
         inline for ([_]PieceType{ PieceType.bishop, PieceType.rook }) |piece_type| {
             for (std.enums.values(Square)) |sq| {
-                if (pseude_attacks[@enumToInt(piece_type)][@enumToInt(square)] & squareBB(sq) != 0) {
+                if (pseudo_attacks[@enumToInt(piece_type)][@enumToInt(square)] & squareBB(sq) != 0) {
                     line_bb[@enumToInt(square)][@enumToInt(sq)] = (attacksBB(piece_type, square, 0) & attacksBB(piece_type, sq, 0)) | squareBB(square) | squareBB(sq);
                     between_bb[@enumToInt(square)][@enumToInt(sq)] = (attacksBB(piece_type, square, squareBB(sq)) & attacksBB(piece_type, sq, squareBB(square)));
                 }

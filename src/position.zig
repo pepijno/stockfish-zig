@@ -1103,6 +1103,39 @@ pub const Position = struct {
         return try std.fmt.allocPrint(allocator, "{s}/{s}/{s}/{s}/{s}/{s}/{s}/{s} {s} {s} {s} {d} {d}", .{str[0], str[1], str[2], str[3], str[4], str[5], str[6], str[7], side_to_move, castling, ep, self.state_info.rule_50, 1 + (self.game_ply - @enumToInt(self.side_to_move)) / 2});
     }
 
+    pub fn setForEndgame(self: *@This(), comptime code: []const u8, comptime c: types.Color, state_info: *StateInfo) !*@This() {
+        const fen_str = comptime blk: {
+            assert(code[0] == 'K');
+
+            const index_weak = 1 + (std.mem.indexOf(u8, code[1..], ([_]u8{'K'})[0..]) orelse unreachable);
+            const index_strong = @minimum(std.mem.indexOf(u8, code, ([_]u8{'v'})[0..]) orelse 100, index_weak);
+            var weak = [_]u8{0} ** (code.len - index_weak);
+            var strong = [_]u8{0} ** index_strong;
+            std.mem.copy(u8, weak[0..], code[index_weak..]);
+            std.mem.copy(u8, strong[0..], code[0..index_strong]);
+
+            assert(weak.len > 0 and weak.len < 8);
+            assert(strong.len > 0 and strong.len < 8);
+
+            if (c == .white) {
+                for (weak) |_,i| {
+                    weak[i] += 32;
+                }
+            } else {
+                for (strong) |_,i| {
+                    strong[i] += 32;
+                }
+            }
+
+            const fen_str = "8/" ++ weak ++ ([_]u8{8 - weak.len + '0'})[0..]
+                ++ "/8/8/8/8/" ++ strong ++ ([_]u8{8 - strong.len +'0'})[0..]
+                ++ "/8 w - - 0 10";
+            break :blk fen_str;
+        };
+        self.set(fen_str, false, state_info);
+        return self;
+    }
+
     pub fn set(self: *@This(), fen_str: []const u8, is_chess_960: bool, state_info: *StateInfo) void {
         self.zero();
         state_info.* = std.mem.zeroes(StateInfo);
