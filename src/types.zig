@@ -255,6 +255,10 @@ pub const Score = enum(i32) {
     pub fn sub(self: @This(), score: @This()) @This() {
         return @intToEnum(@This(), @enumToInt(self) - @enumToInt(score));
     }
+
+    pub fn mul(self: @This(), score: @This()) @This() {
+        return @intToEnum(@This(), @enumToInt(self) * @enumToInt(score));
+    }
 };
 
 pub fn makeScore(mg: i32, eg: i32) Score {
@@ -293,3 +297,19 @@ pub const ScaleFactor = enum(i32) {
     scale_factor_none = 255,
     _,
 };
+
+pub fn HashTable(comptime Entry: type, comptime size: usize) type {
+    return struct {
+        table: [size]Entry,
+
+        pub fn init() @This() {
+            return .{
+                .table = std.mem.zeroes([size]Entry),
+            };
+        }
+
+        pub fn get(self: @This(), key: u64) *Entry {
+            return &self.table[@truncate(u32, key) & (size - 1)];
+        }
+    };
+}
