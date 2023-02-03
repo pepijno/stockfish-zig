@@ -274,6 +274,15 @@ pub fn egValue(psq: Score) Value {
     return eg.s;
 }
 
+pub fn mgValue(psq: Score) Value {
+    const Eg = union {
+        u: u16,
+        s: i16,
+    };
+    const eg = Eg{ .u = u16(u32(psq)) };
+    return eg.s;
+}
+
 pub inline fn mulHi64(a: u64, b: u64) u64 {
     return @intCast(u64, (@as(u128, a) * @as(u128, b)) >> 64);
 }
