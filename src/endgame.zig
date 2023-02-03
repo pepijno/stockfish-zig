@@ -14,6 +14,7 @@ const position = @import("position.zig");
 const Position = position.Position;
 const StateInfo = position.StateInfo;
 const bb = @import("bitboard.zig");
+const bitbase = @import("bitbase.zig");
 
 const EndgameCode = enum {
     evaluation_functions,
@@ -154,7 +155,9 @@ pub fn Endgame(comptime e: EndgameCode) type {
                     _ = weak_king;
                     _ = strong_king;
 
-                    // TODO bitbases probe
+                    if (!bitbase.probe(strong_king, strong_pawn, weak_king, us)) {
+                        return Value.value_draw;
+                    }
 
                     const result = Value.value_known_win.add(.pawn_value_eg).add(@intToEnum(Value, strong_pawn.rank()));
                     return if (self.strong_side == pos.side_to_move)
@@ -529,14 +532,17 @@ pub fn Endgame(comptime e: EndgameCode) type {
                     const weak_king = normalize(pos, self.strong_side, pos.square(.king, self.weak_side));
                     const strong_pawn = normalize(pos, self.strong_side, pos.square(.pawn, self.strong_side));
 
-                    const us = if (self.strong_side == pos.side_to_move) Color.white else Color.black;
-
                     if (strong_pawn.rank() >= @enumToInt(Rank.rank5) and strong_pawn.file() != @enumToInt(File.a)) {
                         return ScaleFactor.scale_factor_none;
                     }
 
-                    // TODO return bitbase probe
-                    return ScaleFactor.scale_factor_none;
+                    const us = if (self.strong_side == pos.side_to_move) Color.white else Color.black;
+
+                    if (bitbase.probe(strong_king, strong_pawn, weak_king, us)) {
+                        return ScaleFactor.scale_factor_none;
+                    } else {
+                        return ScaleFactor.scale_factor_draw;
+                    }
                 },
                 else => {
                     if (EgType(e) == Value) {

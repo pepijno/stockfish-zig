@@ -10,6 +10,7 @@ const search = @import("search.zig");
 const tt = @import("tt.zig");
 const movepick = @import("movepick.zig");
 const endgame = @import("endgame.zig");
+const bitbase = @import("bitbase.zig");
 
 const start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 // const test_fen = "rnbqk2r/4pppP/8/2pR4/1pPpP3/5N2/3P1PPp/RNBQKBN1 b Qkq c3 1 2";
@@ -23,6 +24,8 @@ pub fn main() anyerror!void {
     const allocator = arena.allocator();
 
     bitboard.init();
+    bitbase.init();
+
     tt.tt.init(allocator);
 
     var state_info1: StateInfo = std.mem.zeroes(StateInfo);
